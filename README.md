@@ -20,20 +20,48 @@ Every feature cycle produces artifacts — specs, plans, reviews, decisions, han
 
 ## Install
 
+### Quick install
+
 ```bash
 git clone git@github.com:pototostudio/hyve.git ~/.claude/skills/hyve
 cd ~/.claude/skills/hyve && ./setup
 ```
 
-The setup script:
-- Creates `~/.hyve/` state directory
-- Checks for Linear MCP configuration (guides you through setup if missing)
-- Symlinks each skill into `~/.claude/skills/` for discovery
+### What setup does
+
+1. Creates `~/.hyve/` state directory
+2. Checks for Linear MCP — guides you through adding it to `~/.claude/.mcp.json` if missing
+3. Symlinks each skill into `~/.claude/skills/` so they appear when you type `/` in Claude Code
+
+### After install
+
+Start a new Claude Code session (or type `/clear`). You should see all 7 skills when typing `/hyve`.
+
+### For your team
+
+Each team member runs the same install. To share state across the team:
+
+```bash
+# One person initializes the shared state repo
+hyve-sync --init myapp git@github.com:your-org/hyve-state-myapp.git
+
+# Everyone else clones it
+hyve-sync --init myapp git@github.com:your-org/hyve-state-myapp.git
+
+# Sync anytime
+hyve-sync
+```
+
+### Update
+
+```bash
+cd ~/.claude/skills/hyve && git pull && ./setup
+```
 
 ## Requirements
 
 - [Claude Code](https://claude.com/code)
-- [Bun](https://bun.sh) (for running tests)
+- [Bun](https://bun.sh) (for tests only — not needed to use skills)
 - [Linear MCP](https://mcp.linear.app) (required for full functionality, setup guides you)
 - Slack MCP (optional — for notifications)
 
