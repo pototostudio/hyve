@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+# hyve setup — install hyve as a Claude Code skill directory
+#
+# What this does:
+#   1. Makes bin scripts executable
+#   2. Creates ~/.hyve/ state directory with schema version
+#   3. Checks for Linear MCP configuration and guides setup if missing
+#   4. Symlinks each skill into ~/.claude/skills/ individually
+#      (Claude Code discovers skills at ~/.claude/skills/*/SKILL.md — one level deep)
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
+CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
+
+# All skill directories (direct children of root that contain SKILL.md)
+SKILLS=(review spec pickup decision search status handoff)
+
+echo "Setting up hyve..."
+
+# 1. Make bin scripts executable
+chmod +x "$SCRIPT_DIR/bin/hyve-config"
+chmod +x "$SCRIPT_DIR/bin/hyve-sync"
+chmod +x "$SCRIPT_DIR/bin/hyve-slug"
+
+# 2. Create state directory
+mkdir -p "$STATE_DIR/projects"
+mkdir -p "$STATE_DIR/.cache"
+
+if [ ! -f "$STATE_DIR/schema-version" ]; then
+  echo "1" > "$STATE_DIR/schema-version"
+fi
+
+# Ensure default config exists
+"$SCRIPT_DIR/bin/hyve-config" list >/dev/null 2>&1
+
+# 3. Check Linear MCP configuration
+echo ""
+echo "Checking MCP configuration..."
+
+LINEAR_CONFIGURED=false
+SLACK_CONFIGURED=false
+
+# Check user-level MCP config
+if [ -f "$HOME/.claude/.mcp.json" ]; then
+  if grep -q "linear" "$HOME/.claude/.mcp.json" 2>/dev/null; then
+    LINEAR_CONFIGURED=true
+  fi
+  if grep -q "slack" "$HOME/.claude/.mcp.json" 2>/dev/null; then
+    SLACK_CONFIGURED=true
+  fi
+fi
+
+# Check project-level MCP config (current directory)
+if [ -f ".claude/.mcp.json" ]; then
+  if grep -q "linear" ".claude/.mcp.json" 2>/dev/null; then
+    LINEAR_CONFIGURED=true
+  fi
+  if grep -q "slack" ".claude/.mcp.json" 2>/dev/null; then
+    SLACK_CONFIGURED=true
+  fi
+fi
+
+if [ "$LINEAR_CONFIGURED" = true ]; then
+  echo "  Linear MCP: configured"
+else
+  echo "  Linear MCP: NOT configured"
+  echo ""
+  echo "  Hyve works best with Linear MCP. To configure it, add to ~/.claude/.mcp.json:"
+  echo ""
+  echo '  {'
+  echo '    "mcpServers": {'
+  echo '      "linear": {'
+  echo '        "type": "url",'
+  echo '        "url": "https://mcp.linear.app/sse"'
+  echo '      }'
+  echo '    }'
+  echo '  }'
+  echo ""
+  echo "  Then restart Claude Code and authenticate when prompted."
+  echo "  Without Linear, skills operate in local-only mode with reduced context."
+fi
+
+if [ "$SLACK_CONFIGURED" = true ]; then
+  echo "  Slack MCP: configured"
+else
+  echo "  Slack MCP: not configured (optional — notifications will be skipped)"
+fi
+
+# 4. Symlink skills into Claude Code skills directory
+# Claude Code discovers skills at ~/.claude/skills/*/SKILL.md (one level deep).
+# We create individual symlinks for each skill, like gstack does.
+echo ""
+echo "Linking skills..."
+mkdir -p "$CLAUDE_SKILLS_DIR"
+
+# Link the root hyve directory (for the root SKILL.md + bin/ + hooks/)
+LINK_ROOT="$CLAUDE_SKILLS_DIR/hyve"
+if [ -L "$LINK_ROOT" ]; then
+  rm "$LINK_ROOT"
+fi
+if [ ! -d "$LINK_ROOT" ]; then
+  ln -s "$SCRIPT_DIR" "$LINK_ROOT"
+  echo "  hyve -> $SCRIPT_DIR"
+fi
+
+# Link each skill directory individually
+LINKED=0
+SKIPPED=0
+for SKILL in "${SKILLS[@]}"; do
+  LINK_NAME="$CLAUDE_SKILLS_DIR/hyve-${SKILL}"
+  SKILL_DIR="$SCRIPT_DIR/$SKILL"
+
+  if [ ! -d "$SKILL_DIR" ] || [ ! -f "$SKILL_DIR/SKILL.md" ]; then
+    echo "  WARN: $SKILL_DIR/SKILL.md not found, skipping"
+    continue
+  fi
+
+  if [ -L "$LINK_NAME" ]; then
+    # Symlink exists — check if it points to the right place
+    EXISTING=$(readlink "$LINK_NAME" 2>/dev/null || echo "")
+    if [ "$EXISTING" = "$SKILL_DIR" ] || [ "$EXISTING" = "squadctl/$SKILL" ]; then
+      SKIPPED=$((SKIPPED + 1))
+      continue
+    fi
+    # Points elsewhere — remove and re-link
+    rm "$LINK_NAME"
+  fi
+
+  # Create relative symlink (hyve/<skill>) so it works if dir moves
+  ln -s "hyve/$SKILL" "$LINK_NAME"
+  LINKED=$((LINKED + 1))
+done
+
+echo "  Linked: $LINKED new, $SKIPPED already linked"
+
+echo ""
+echo "hyve ready."
+echo "  State: $STATE_DIR"
+echo "  Skills: $CLAUDE_SKILLS_DIR/hyve-*"
+echo ""
+echo "Available skills (type / to see them):"
+echo "  /hyve:review   — Multi-stakeholder plan review (PM + Eng + Coordination)"
+echo "  /hyve:spec     — PM: decompose requirement into codebase-aware tasks"
+echo "  /hyve:pickup   — Dev: load full context for a ticket"
+echo "  /hyve:decision — Record a non-obvious decision"
+echo "  /hyve:search   — Search all shared state artifacts"
+echo "  /hyve:status   — Cross-role status update"
+echo "  /hyve:handoff  — Structured role-to-role context handoff"

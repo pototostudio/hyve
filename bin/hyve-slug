@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# hyve-slug — generate a project slug from the current repo or config
+#
+# Usage:
+#   hyve-slug              — auto-detect from git remote or directory name
+#   eval "$(hyve-slug)"    — sets SLUG variable in the caller's shell
+#
+# Resolution order:
+#   1. HYVE_PROJECT env var (explicit override)
+#   2. hyve config (hyve-config get project)
+#   3. Git remote origin (owner/repo → repo)
+#   4. Git toplevel directory name
+#   5. Current directory name
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# 1. Env var override
+if [ -n "${HYVE_PROJECT:-}" ]; then
+  SLUG="$HYVE_PROJECT"
+# 2. Config file
+elif CONFIGURED=$("$SCRIPT_DIR/hyve-config" get project 2>/dev/null) && [ -n "$CONFIGURED" ]; then
+  SLUG="$CONFIGURED"
+# 3. Git remote
+elif REMOTE=$(git remote get-url origin 2>/dev/null); then
+  # Extract repo name from SSH or HTTPS URL
+  SLUG=$(echo "$REMOTE" | sed 's|.*/||' | sed 's|\.git$||')
+# 4. Git toplevel
+elif TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null); then
+  SLUG=$(basename "$TOPLEVEL")
+# 5. Current directory
+else
+  SLUG=$(basename "$PWD")
+fi
+
+# Sanitize: lowercase, replace non-alphanumeric with hyphens
+SLUG=$(echo "$SLUG" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9-]/-/g' | sed 's/--*/-/g' | sed 's/^-//' | sed 's/-$//')
+
+echo "SLUG=$SLUG"

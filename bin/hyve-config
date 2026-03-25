@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# hyve-config — read/write ~/.hyve/config.yaml
+#
+# Usage:
+#   hyve-config get <key>          — read a config value
+#   hyve-config set <key> <value>  — write a config value
+#   hyve-config list               — show all config
+#
+# Env overrides (for testing):
+#   HYVE_STATE_DIR  — override ~/.hyve state directory
+set -euo pipefail
+
+STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
+CONFIG_FILE="$STATE_DIR/config.yaml"
+
+ensure_config() {
+  if [ ! -f "$CONFIG_FILE" ]; then
+    mkdir -p "$STATE_DIR"
+    cat > "$CONFIG_FILE" <<'YAML'
+# hyve config — edit with: hyve-config set <key> <value>
+role: dev
+sync_mode: local
+YAML
+  fi
+}
+
+case "${1:-}" in
+  get)
+    KEY="${2:?Usage: hyve-config get <key>}"
+    ensure_config
+    grep -E "^${KEY}:" "$CONFIG_FILE" 2>/dev/null | tail -1 | sed "s/^${KEY}:[[:space:]]*//" | tr -d '[:space:]' || true
+    ;;
+  set)
+    KEY="${2:?Usage: hyve-config set <key> <value>}"
+    VALUE="${3:?Usage: hyve-config set <key> <value>}"
+    ensure_config
+    if grep -qE "^${KEY}:" "$CONFIG_FILE" 2>/dev/null; then
+      # Update existing key — use temp file for portability
+      TMP=$(mktemp)
+      sed "s|^${KEY}:.*|${KEY}: ${VALUE}|" "$CONFIG_FILE" > "$TMP"
+      mv "$TMP" "$CONFIG_FILE"
+    else
+      echo "${KEY}: ${VALUE}" >> "$CONFIG_FILE"
+    fi
+    ;;
+  list)
+    ensure_config
+    cat "$CONFIG_FILE"
+    ;;
+  *)
+    echo "Usage: hyve-config {get|set|list} [key] [value]" >&2
+    exit 1
+    ;;
+esac

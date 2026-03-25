@@ -1,0 +1,22 @@
+{
+  "name": "hyve",
+  "version": "0.1.0",
+  "description": "Hyve — shared team memory for Claude Code. PMs and devs run skills locally, building institutional knowledge that compounds over time.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "test": "bun test test/",
+    "test:all": "bun test test/"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  },
+  "keywords": [
+    "claude-code",
+    "skills",
+    "team",
+    "collaboration",
+    "linear",
+    "shared-memory"
+  ]
+}

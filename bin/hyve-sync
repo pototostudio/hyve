@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+# hyve-sync — sync shared state directory via git
+#
+# Usage:
+#   hyve-sync [project-slug]  — pull then push shared state for a project
+#   hyve-sync --init <slug> <remote-url>  — initialize a new shared state repo
+#   hyve-sync --status [slug]  — show sync status
+#
+# The shared state directory (~/.hyve/projects/<slug>/) is a git repo.
+# Each project syncs independently to its own remote.
+set -euo pipefail
+
+STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+get_slug() {
+  if [ -n "${1:-}" ]; then
+    echo "$1"
+  else
+    "$SCRIPT_DIR/hyve-slug" 2>/dev/null || echo ""
+  fi
+}
+
+cmd_init() {
+  local SLUG="${1:?Usage: hyve-sync --init <slug> <remote-url>}"
+  local REMOTE="${2:?Usage: hyve-sync --init <slug> <remote-url>}"
+  local PROJECT_DIR="$STATE_DIR/projects/$SLUG"
+
+  if [ -d "$PROJECT_DIR/.git" ]; then
+    echo "Already initialized: $PROJECT_DIR"
+    echo "Remote: $(cd "$PROJECT_DIR" && git remote get-url origin 2>/dev/null || echo 'none')"
+    return 0
+  fi
+
+  mkdir -p "$PROJECT_DIR"
+  cd "$PROJECT_DIR"
+
+  # Check if remote repo exists by trying to clone
+  if git ls-remote "$REMOTE" HEAD &>/dev/null; then
+    # Remote exists — clone into temp then move contents
+    TMP=$(mktemp -d)
+    git clone "$REMOTE" "$TMP/repo" 2>/dev/null
+    mv "$TMP/repo/.git" "$PROJECT_DIR/.git"
+    rm -rf "$TMP"
+    git checkout . 2>/dev/null || true
+    echo "Cloned existing shared state from $REMOTE"
+  else
+    # Remote doesn't exist yet — init fresh
+    git init
+    git remote add origin "$REMOTE"
+    mkdir -p specs plans reviews decisions handoffs status
+    echo "1" > schema-version
+    git add -A
+    git commit -m "Initialize hyve shared state"
+    echo "Initialized new shared state repo. Push with: cd $PROJECT_DIR && git push -u origin main"
+  fi
+}
+
+cmd_sync() {
+  local SLUG
+  SLUG=$(get_slug "${1:-}")
+  if [ -z "$SLUG" ]; then
+    echo "Error: could not determine project slug. Pass it as argument or run from a git repo." >&2
+    exit 1
+  fi
+
+  local PROJECT_DIR="$STATE_DIR/projects/$SLUG"
+  if [ ! -d "$PROJECT_DIR/.git" ]; then
+    echo "Error: $PROJECT_DIR is not a git repo. Run: hyve-sync --init $SLUG <remote-url>" >&2
+    exit 1
+  fi
+
+  cd "$PROJECT_DIR"
+
+  # Check if remote is configured
+  if ! git remote get-url origin &>/dev/null; then
+    echo "No remote configured. Shared state is local-only."
+    echo "To enable sync: cd $PROJECT_DIR && git remote add origin <url>"
+    exit 0
+  fi
+
+  # Pull with rebase (write-once files should never conflict)
+  echo "Pulling shared state..."
+  if ! git pull --rebase origin "$(git branch --show-current 2>/dev/null || echo main)" 2>/dev/null; then
+    echo "Warning: pull failed. Preserving local state. Check: cd $PROJECT_DIR && git status"
+    git rebase --abort 2>/dev/null || true
+    exit 1
+  fi
+
+  # Push
+  echo "Pushing shared state..."
+  if ! git push origin "$(git branch --show-current 2>/dev/null || echo main)" 2>/dev/null; then
+    echo "Warning: push failed. Local state is committed. Retry: hyve-sync $SLUG"
+    exit 1
+  fi
+
+  echo "Synced: $PROJECT_DIR"
+}
+
+cmd_status() {
+  local SLUG
+  SLUG=$(get_slug "${1:-}")
+  if [ -z "$SLUG" ]; then
+    echo "Error: could not determine project slug." >&2
+    exit 1
+  fi
+
+  local PROJECT_DIR="$STATE_DIR/projects/$SLUG"
+  if [ ! -d "$PROJECT_DIR" ]; then
+    echo "No shared state for project: $SLUG"
+    exit 0
+  fi
+
+  echo "Project: $SLUG"
+  echo "Path: $PROJECT_DIR"
+
+  if [ -d "$PROJECT_DIR/.git" ]; then
+    cd "$PROJECT_DIR"
+    echo "Git: yes"
+    echo "Remote: $(git remote get-url origin 2>/dev/null || echo 'none (local-only)')"
+    echo "Branch: $(git branch --show-current 2>/dev/null || echo 'unknown')"
+    echo "Status: $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ') uncommitted changes"
+    echo "Files:"
+    for dir in specs plans reviews decisions handoffs status; do
+      COUNT=$(find "$PROJECT_DIR/$dir" -name '*.md' 2>/dev/null | wc -l | tr -d ' ')
+      echo "  $dir/: $COUNT files"
+    done
+  else
+    echo "Git: no (local-only, no sync)"
+  fi
+}
+
+case "${1:-}" in
+  --init)  shift; cmd_init "$@" ;;
+  --status) shift; cmd_status "$@" ;;
+  *)       cmd_sync "$@" ;;
+esac
