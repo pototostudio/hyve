@@ -137,6 +137,53 @@ PM writes requirement in Linear
 
 At any point: `/hyve:search` to find past decisions, `/hyve:status` for a status report.
 
+## Add to your project's CLAUDE.md
+
+Add this to your project's `CLAUDE.md` so Claude Code knows about hyve in every session:
+
+```markdown
+## Team Collaboration (hyve)
+
+This project uses [hyve](https://github.com/pototostudio/hyve) for team collaboration.
+
+### Skills
+- `/hyve:spec` — PM: decompose requirements into codebase-aware tasks
+- `/hyve:pickup` — Dev: load full context before starting a ticket
+- `/hyve:review` — Review a plan from PM + Eng + Coordination perspectives
+- `/hyve:decision` — Record a non-obvious decision
+- `/hyve:search` — Search past specs, plans, decisions
+- `/hyve:status` — Generate a status report
+- `/hyve:handoff` — Hand off work to a teammate
+
+### Workflow
+1. PM runs `/hyve:spec <linear-id>` to decompose a requirement
+2. Dev runs `/hyve:pickup <linear-id>` to get full context
+3. Dev implements, then runs `/hyve:review` before merging
+4. Record important decisions with `/hyve:decision`
+5. Use `/hyve:handoff` when transferring work to someone else
+
+### Configuration
+Run `hyve-config set role <dev|pm|design|lead>` to set your role.
+Shared state lives at `~/.hyve/projects/`. Sync with `hyve-sync`.
+```
+
+### For agents (Claude Code headless / CI)
+
+If you run Claude Code in headless mode (e.g., `claude -p "do something"`), hyve skills work the same way. Set the role and project via environment:
+
+```bash
+export HYVE_STATE_DIR=~/.hyve
+export HYVE_PROJECT=myapp
+
+# Agent picks up a ticket with full context
+claude -p "/hyve:pickup VER-456"
+
+# Agent runs a review
+claude -p "/hyve:review"
+```
+
+For CI pipelines, mount `~/.hyve/` as a cached volume so shared state persists across runs.
+
 ## gstack interop
 
 If [gstack](https://github.com/garrytan/gstack) is installed, `/hyve:review` uses gstack's `/plan-eng-review` for a deeper engineering perspective. This is automatic — if gstack isn't installed, hyve uses its own simpler review logic.
