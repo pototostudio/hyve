@@ -289,7 +289,7 @@ C) Skip — not important enough to block"
 
 ## Completion
 
-Report the review result:
+### Step 1: Report summary
 
 ```
 REVIEW COMPLETE
@@ -301,24 +301,58 @@ REVIEW COMPLETE
   Slack notification: {posted | skipped}
 ```
 
-## What's Next
+### Step 2: Walk through findings with the user
 
-After the review, recommend the logical next step via AskUserQuestion:
+**This step is MANDATORY. Do not skip it.**
+
+Present each perspective's key findings conversationally. For each perspective:
+- State the verdict
+- Highlight the most important findings (concerns, gaps, conflicts)
+- Explain *why* each finding matters and what the risk is if unaddressed
+- Call out anything surprising or non-obvious
+
+Example walkthrough:
+
+> **PM Perspective** — PASS_WITH_CONCERNS
+> The plan covers 4 of 5 requirements, but there's a gap: the ticket asks for
+> bulk export and the plan doesn't address it. This could mean a follow-up ticket
+> or it could be a miss. Also flagged some scope creep around the notification
+> system — the PM didn't ask for that.
+>
+> **Engineering Perspective** — PASS
+> Architecture looks solid. Two things to watch: there are no tests planned for
+> the error path when the API returns a 429, and the new middleware adds a DB call
+> on every request which could be a latency concern at scale.
+>
+> **Coordination** — PASS
+> No file conflicts with active work. VER-458 is refactoring the user model in
+> parallel but touches different files.
+
+After walking through all perspectives, summarize the action items as a numbered list
+and ask if the user has questions or disagrees with any finding before proceeding.
+
+### Step 3: Offer next steps
+
+After discussing findings, offer the next step via AskUserQuestion. Always include
+an option to do a deeper dive on a specific perspective.
 
 **If verdict is PASS:**
 > "Review passed. What's next?"
 > A) Start implementing — dive into the code
-> B) Record a decision (`/hyve:decision`) — capture any non-obvious choices from the review
-> C) Hand off to someone (`/hyve:handoff`) — pass context to another dev
+> B) Deep-dive a specific perspective — re-run just the PM or Eng review in more detail
+> C) Record a decision (`/hyve:decision`) — capture any non-obvious choices from the review
+> D) Hand off to someone (`/hyve:handoff`) — pass context to another dev
 
 **If verdict is PASS_WITH_CONCERNS:**
-> "Review passed with {N} action items. What's next?"
+> "Review passed with {N} concerns. What's next?"
 > A) Address action items, then start implementing
-> B) Re-run `/hyve:review` after addressing concerns
-> C) Record a decision (`/hyve:decision`) about how to handle the concerns
+> B) Deep-dive a specific perspective — I can re-run just the PM or Eng review with more scrutiny
+> C) Re-run full `/hyve:review` after addressing concerns
+> D) Record a decision (`/hyve:decision`) about how to handle the concerns
 
 **If verdict is FAIL:**
 > "Review failed — {key reason}. What's next?"
 > A) Revise the plan and re-run `/hyve:review`
-> B) Discuss with the PM — the requirement may need clarification (`/hyve:spec`)
-> C) Record why this approach was rejected (`/hyve:decision`)
+> B) Deep-dive the failing perspective — let's dig into what specifically needs to change
+> C) Discuss with the PM — the requirement may need clarification (`/hyve:spec`)
+> D) Record why this approach was rejected (`/hyve:decision`)
