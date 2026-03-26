@@ -1,6 +1,6 @@
 ---
 name: hyve:search
-version: 0.1.0
+version: 0.2.0
 description: |
   Search across all shared state artifacts — specs, plans, reviews, decisions,
   handoffs. Find past decisions by topic, locate related specs, or discover
@@ -130,9 +130,10 @@ Tips:
 - Shared state for this project has {N} total files
 ```
 
-## AskUserQuestion Format
+## Conventions
 
-All questions to the user MUST use AskUserQuestion with lettered options.
+**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
 
 ## Completion
 
@@ -143,9 +144,10 @@ SEARCH COMPLETE
   Filtered: active only (pass --all for all)
 ```
 
-## What's Next
+After showing results, offer to read any in full:
+> "Want to read any of these in full? Enter a number (e.g., '1') or 'done' to finish."
 
-After search results are shown, recommend via AskUserQuestion:
+### What's Next
 
 > "Search complete. What's next?"
 > A) Search again with different keywords (`/hyve:search`)

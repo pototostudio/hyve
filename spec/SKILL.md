@@ -1,6 +1,6 @@
 ---
 name: hyve:spec
-version: 0.1.0
+version: 0.2.0
 description: |
   PM: decompose a product requirement into codebase-aware implementation tasks.
   Reads a Linear issue, analyzes the codebase, and produces structured sub-tasks
@@ -187,14 +187,14 @@ If Slack MCP is available, post a summary to the configured channel:
 > Decomposed into {N} tasks for {Linear ID}
 > Full spec: `~/.hyve/projects/{slug}/specs/{filename}`
 
-## AskUserQuestion Format
+## Conventions
 
-All questions to the user MUST use AskUserQuestion with lettered options:
-- Re-ground: state the requirement being decomposed (1 sentence)
-- Options: A), B), C) with clear one-line descriptions
-- Recommend: state which option and why
+**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
 
 ## Completion
+
+### Step 1: Report summary
 
 ```
 SPEC COMPLETE
@@ -206,9 +206,20 @@ SPEC COMPLETE
   Slack: posted / skipped
 ```
 
-## What's Next
+### Step 2: Walk through the decomposition with the user
 
-After the spec is complete, recommend via AskUserQuestion:
+**This step is MANDATORY. Do not skip it.**
+
+Walk through each task conversationally:
+- For each task: state the title, PM intent (one sentence), and effort estimate
+- Highlight any tasks that are ambiguous or where you made judgment calls
+- Call out dependencies between tasks if any exist
+- Present the "NOT in scope" items and confirm the user agrees
+
+Ask if the user has questions, wants to split/merge any tasks, or disagrees
+with the decomposition before offering next steps.
+
+### Step 3: Offer next steps
 
 > "Spec decomposed into {N} tasks. What's next?"
 > A) A dev should run `/hyve:pickup` on one of the sub-tasks to start implementing

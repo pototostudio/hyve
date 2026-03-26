@@ -1,6 +1,6 @@
 ---
 name: hyve
-version: 0.1.0
+version: 0.2.0
 description: |
   Hyve — shared team memory for Claude Code. PMs and devs run skills locally,
   building institutional knowledge that compounds over time. Skills produce structured

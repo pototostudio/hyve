@@ -1,6 +1,6 @@
 ---
 name: hyve:pickup
-version: 0.1.0
+version: 0.2.0
 description: |
   Dev: load full context for a Linear ticket before starting implementation.
   Reads the PM's spec, prior decisions, related reviews, and analyzes the codebase
@@ -194,6 +194,7 @@ author: {user}
 date: {ISO date}
 linear_id: {issue ID}
 branch: {git branch}
+commit: {git rev-parse --short HEAD}
 affected_files:
   - src/path/file.ts
   - src/path/other.ts
@@ -212,14 +213,14 @@ If Linear MCP is available:
   > Suggested approach: {one-line}
   > Conflicts: {none | list}
 
-## AskUserQuestion Format
+## Conventions
 
-All questions to the user MUST use AskUserQuestion with lettered options:
-- Re-ground: state the ticket being picked up (1 sentence)
-- Options: A), B), C) with clear one-line descriptions
-- Recommend: state which option and why
+**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
 
 ## Completion
+
+### Step 1: Report summary
 
 ```
 PICKUP COMPLETE
@@ -230,9 +231,20 @@ PICKUP COMPLETE
   Linear updated: yes / skipped
 ```
 
-## What's Next
+### Step 2: Walk through the brief with the user
 
-After the pickup brief is ready, recommend via AskUserQuestion:
+**This step is MANDATORY. Do not skip it.**
+
+Walk through the pickup brief conversationally:
+- **PM Intent:** Summarize what the PM wants and why (the most important part)
+- **Constraints:** Anything the dev must NOT do
+- **Suggested Approach:** Walk through the approach and why you recommend it
+- **Conflicts:** If any, explain specifically which files overlap and with whom
+- **Key Decisions:** Reference any prior decisions from shared state that affect this work
+
+Ask if the user has questions or needs clarification before offering next steps.
+
+### Step 3: Offer next steps
 
 **If no conflicts:**
 > "Context loaded for {LINEAR_ID}. Ready to implement. What's next?"

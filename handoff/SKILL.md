@@ -1,6 +1,6 @@
 ---
 name: hyve:handoff
-version: 0.1.0
+version: 0.2.0
 description: |
   Structured role-to-role context handoff. When one person needs to hand work
   to another (PM to dev, dev to dev, dev to PM for review), this skill gathers
@@ -178,14 +178,14 @@ If Slack MCP is available and recipient is named:
 If the handoff type is `dev-to-pm` (handing back for review), update the
 Linear issue status to "In Review."
 
-## AskUserQuestion Format
+## Conventions
 
-All questions to the user MUST use AskUserQuestion with lettered options:
-- Re-ground: state the ticket being handed off and to whom (1 sentence)
-- Options: A), B), C) with clear one-line descriptions
-- Recommend: state which option and why
+**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
 
 ## Completion
+
+### Step 1: Report summary
 
 ```
 HANDOFF COMPLETE
@@ -198,11 +198,19 @@ HANDOFF COMPLETE
   Slack: notified / skipped
 ```
 
-## What's Next
+### Step 2: Walk through the handoff with the user
 
-After the handoff, recommend via AskUserQuestion:
+**This step is MANDATORY. Do not skip it.**
 
-**For the person handing off:**
+Summarize the handoff conversationally:
+- What's done vs. what remains (with counts)
+- The most critical gotcha the recipient needs to know
+- Any open questions the recipient will need to answer
+
+Ask if the user wants to add anything before finalizing.
+
+### Step 3: Offer next steps
+
 > "Handoff complete. {recipient} has been notified. What's next?"
 > A) Pick up another ticket (`/hyve:pickup`)
 > B) Check team status (`/hyve:status`)

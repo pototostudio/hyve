@@ -1,6 +1,6 @@
 ---
 name: hyve:status
-version: 0.1.0
+version: 0.2.0
 description: |
   Cross-role status update. Reads Linear issues, git history, and shared state
   to produce a role-appropriate status report. PM gets product-language progress;
@@ -162,14 +162,14 @@ If Slack MCP is available, offer via AskUserQuestion:
 > A) Yes — post to configured channel
 > B) No — just save locally
 
-## AskUserQuestion Format
+## Conventions
 
-All questions to the user MUST use AskUserQuestion with lettered options:
-- Re-ground: state the project and role (1 sentence)
-- Options: A), B), C) with clear one-line descriptions
-- Recommend: state which option and why
+**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
 
 ## Completion
+
+### Step 1: Report summary
 
 ```
 STATUS COMPLETE
@@ -180,9 +180,19 @@ STATUS COMPLETE
   Slack: posted / skipped
 ```
 
-## What's Next
+### Step 2: Walk through the status with the user
 
-After the status report, recommend via AskUserQuestion:
+**This step is MANDATORY. Do not skip it.**
+
+Walk through the status report conversationally:
+- **Highlights:** What progressed this week (celebrate wins)
+- **Blockers:** If any, explain what's blocked and who can unblock it
+- **Risks:** Anything trending toward late or at risk
+- **Decisions this week:** Reference any new decisions from shared state
+
+Ask if the user has context to add or corrections.
+
+### Step 3: Offer next steps
 
 **If blockers were found:**
 > "Status shows {N} blocker(s). What's next?"

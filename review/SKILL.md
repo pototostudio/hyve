@@ -1,6 +1,6 @@
 ---
 name: hyve:review
-version: 0.1.0
+version: 0.2.0
 description: |
   Multi-stakeholder plan review. Examines an implementation plan from three perspectives:
   PM (does it match requirements?), Engineering (is the architecture sound?), and
@@ -30,7 +30,11 @@ allowed-tools:
 # /hyve:review — Multi-Stakeholder Plan Review
 
 Review an implementation plan from three perspectives: PM, Engineering, and Coordination.
-Produces a structured review document saved to shared state.
+Runs **one perspective at a time**, pausing for user feedback between each.
+
+**Follow the conventions in `CONVENTIONS.md` for all user interactions.**
+All AskUserQuestion calls MUST use the 5-part format (re-ground, simplify, recommend,
+options, one-decision-per-question). Read `CONVENTIONS.md` in the hyve root if unsure.
 
 ## Preamble
 
@@ -40,11 +44,13 @@ HYVE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}" 2>/dev/null)/.." && pwd 2>/dev
 STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
 mkdir -p "$STATE_DIR/projects" "$STATE_DIR/.cache"
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 eval "$("$HYVE_DIR/bin/hyve-slug" 2>/dev/null)" || SLUG="unknown"
 ROLE=$("$HYVE_DIR/bin/hyve-config" get role 2>/dev/null || echo "dev")
 PROJECT_DIR="$STATE_DIR/projects/$SLUG"
 mkdir -p "$PROJECT_DIR"/{specs,plans,reviews,decisions,handoffs,status}
 echo "BRANCH: $_BRANCH"
+echo "COMMIT: $_COMMIT"
 echo "PROJECT: $SLUG"
 echo "ROLE: $ROLE"
 echo "STATE: $PROJECT_DIR"
@@ -84,9 +90,34 @@ If the plan is a Linear issue ID, fetch the issue details via MCP and check if a
 corresponding plan exists in shared state. If not, the review will work from the
 Linear issue directly (less context, but functional).
 
+### Staleness Check
+
+If the plan file has a `commit:` field in its frontmatter, compare against current HEAD:
+
+```bash
+CURRENT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null)
+# Read the plan's commit field
+```
+
+If commits differ, warn the user:
+```
+STALE PLAN: This plan was created at commit {old}. HEAD is now {current}
+({N} commits ahead). The plan may not reflect the current codebase.
+```
+
+Use AskUserQuestion:
+> A) Continue anyway — the changes don't affect this plan
+> B) Re-run `/hyve:pickup` to refresh the plan first
+
 ## Review Flow
 
-Once a plan is identified, run three review perspectives sequentially.
+Once a plan is identified, run three review perspectives **one at a time**.
+**STOP after each perspective** to present findings and get user feedback
+before proceeding to the next. This is critical — if the PM perspective
+reveals a fundamental scope problem, there's no point running the Eng review
+on a plan that will change.
+
+---
 
 ### Perspective 1: PM Review
 
@@ -117,8 +148,36 @@ Once a plan is identified, run three review perspectives sequentially.
    - [OK] Must not break existing auth flow
    - [CONCERN] Performance constraint not addressed
 
+   **NOT in scope** (intentionally deferred):
+   - Bulk export — PM confirmed this is a follow-up
+   - Admin UI — out of scope per ticket constraints
+
    **Verdict:** PASS / PASS_WITH_CONCERNS / FAIL
    ```
+
+#### PM Review: Pause for Feedback
+
+**STOP HERE.** Walk through the PM findings conversationally:
+- State the verdict
+- Highlight the most important gaps, scope concerns, or constraint violations
+- Explain why each matters
+- Summarize what's NOT in scope and confirm the user agrees
+
+Then use AskUserQuestion:
+> **Re-ground:** PM review complete for {ticket} on `{branch}`. Found {N} gaps, {N} scope concerns.
+>
+> **Simplify:** {plain English summary of the key finding}
+>
+> **Recommend:** {A or B} — {why}
+>
+> A) Looks good — continue to Engineering review
+> B) I disagree with a finding — let me clarify
+> C) This changes things — need to revise the plan before continuing
+
+If the user picks B, discuss their concern. Adjust findings if warranted.
+If the user picks C, stop the review and recommend `/hyve:pickup` to revise.
+
+---
 
 ### Perspective 2: Engineering Review
 
@@ -138,7 +197,7 @@ Once a plan is identified, run three review perspectives sequentially.
 - Embed the output as the Engineering perspective section of the review.
 
 **If gstack is NOT installed:**
-- Run a simpler engineering review covering:
+- Run a structured engineering review covering:
   - **Architecture:** Component boundaries, data flow, coupling concerns
   - **Edge cases:** Nil inputs, empty states, error paths, concurrent access
   - **Tests:** Are tests planned for new codepaths? Coverage gaps?
@@ -158,8 +217,34 @@ Output as:
 **Tests:**
 - [COVERED/GAP] test description
 
+**What Already Exists** (reuse these):
+- `src/lib/auth.ts` — existing auth middleware, extend rather than replace
+- `src/utils/validate.ts` — validation helpers already cover email/phone
+- `src/components/DataTable` — reusable table, don't build a new one
+
 **Verdict:** PASS / PASS_WITH_CONCERNS / FAIL
 ```
+
+#### Eng Review: Pause for Feedback
+
+**STOP HERE.** Walk through the Engineering findings conversationally:
+- State the verdict
+- Highlight the most critical architecture concerns, test gaps, or performance risks
+- Call out the "What Already Exists" items — make sure the dev knows what to reuse
+- Explain why each concern matters and the risk if unaddressed
+
+Then use AskUserQuestion:
+> **Re-ground:** Engineering review complete for {ticket}. Found {N} concerns, {N} test gaps.
+>
+> **Simplify:** {plain English summary of the key finding}
+>
+> **Recommend:** {A or B} — {why}
+>
+> A) Looks good — continue to Coordination review
+> B) I disagree with a finding — let me explain
+> C) These concerns are serious — need to revise the plan
+
+---
 
 ### Perspective 3: Coordination Review
 
@@ -199,9 +284,31 @@ Output as:
 **Verdict:** PASS / PASS_WITH_CONCERNS / FAIL
 ```
 
+#### Coordination Review: Pause for Feedback
+
+**STOP HERE.** Walk through the Coordination findings conversationally:
+- State the verdict
+- If conflicts found, explain specifically which files overlap and with whom
+- If dependencies found, explain the blocking chain
+- If clean, say so briefly
+
+Then use AskUserQuestion:
+> **Re-ground:** Coordination review complete for {ticket}. {conflicts found / no conflicts}.
+>
+> **Simplify:** {plain English summary}
+>
+> **Recommend:** A — {why}
+>
+> A) All clear — proceed to synthesis
+> B) I know about a conflict not detected — let me add context
+> C) Need to coordinate with {person} before proceeding
+
+---
+
 ## Synthesis
 
-After all three perspectives are complete, produce a synthesis:
+After all three perspectives are complete and the user has confirmed each,
+produce a synthesis:
 
 ```
 ## Review Synthesis
@@ -214,9 +321,13 @@ After all three perspectives are complete, produce a synthesis:
 
 **Overall:** PASS_WITH_CONCERNS
 
+**NOT in scope** (confirmed during review):
+- {item} — {rationale}
+
 **Action items:**
 1. Address PM requirement gap: [specific item]
 2. Add tests for: [specific codepaths]
+3. Reuse existing: [specific files from "What Already Exists"]
 
 **Recommendation:** Proceed with implementation after addressing action items.
 ```
@@ -243,7 +354,12 @@ author: {git user name}
 date: {ISO date}
 linear_id: {issue ID}
 plan_file: {path to the plan that was reviewed}
+commit: {git rev-parse --short HEAD}
 verdict: {PASS | PASS_WITH_CONCERNS | FAIL}
+pm_verdict: {verdict}
+eng_verdict: {verdict}
+coord_verdict: {verdict}
+action_items: {N}
 ---
 ```
 
@@ -275,18 +391,6 @@ Use `mcp__claude_ai_Slack__slack_send_message`.
 
 If Slack MCP is unavailable or verdict is PASS, skip this step.
 
-## AskUserQuestion Format
-
-All questions to the user MUST use AskUserQuestion with lettered options:
-- Re-ground: state the project and what we're reviewing (1 sentence)
-- Options: A), B), C) with clear one-line descriptions
-- Recommend: state which option and why
-
-Example: "Reviewing plan for VER-456. The PM perspective found a requirement gap.
-A) Add to action items — address before implementation
-B) Mark as out of scope — PM didn't intend this
-C) Skip — not important enough to block"
-
 ## Completion
 
 ### Step 1: Report summary
@@ -294,6 +398,7 @@ C) Skip — not important enough to block"
 ```
 REVIEW COMPLETE
   Plan: {plan path or Linear ID}
+  Commit: {commit hash at review time}
   Verdict: {PASS | PASS_WITH_CONCERNS | FAIL}
   Action items: {N}
   Saved to: {review file path}
@@ -305,31 +410,15 @@ REVIEW COMPLETE
 
 **This step is MANDATORY. Do not skip it.**
 
-Present each perspective's key findings conversationally. For each perspective:
-- State the verdict
-- Highlight the most important findings (concerns, gaps, conflicts)
-- Explain *why* each finding matters and what the risk is if unaddressed
-- Call out anything surprising or non-obvious
+Since we already paused after each perspective, the completion walkthrough is a
+**synthesis discussion** — not a repeat of individual findings. Focus on:
 
-Example walkthrough:
+- The overall verdict and what it means for implementation readiness
+- The consolidated action items as a numbered list
+- Any tensions between perspectives (e.g., PM wants feature X but Eng flagged perf risk)
+- The "NOT in scope" list as a final confirmation
 
-> **PM Perspective** — PASS_WITH_CONCERNS
-> The plan covers 4 of 5 requirements, but there's a gap: the ticket asks for
-> bulk export and the plan doesn't address it. This could mean a follow-up ticket
-> or it could be a miss. Also flagged some scope creep around the notification
-> system — the PM didn't ask for that.
->
-> **Engineering Perspective** — PASS
-> Architecture looks solid. Two things to watch: there are no tests planned for
-> the error path when the API returns a 429, and the new middleware adds a DB call
-> on every request which could be a latency concern at scale.
->
-> **Coordination** — PASS
-> No file conflicts with active work. VER-458 is refactoring the user model in
-> parallel but touches different files.
-
-After walking through all perspectives, summarize the action items as a numbered list
-and ask if the user has questions or disagrees with any finding before proceeding.
+Ask if the user has questions or disagrees with any finding before offering next steps.
 
 ### Step 3: Offer next steps
 

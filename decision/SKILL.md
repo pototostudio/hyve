@@ -1,6 +1,6 @@
 ---
 name: hyve:decision
-version: 0.1.0
+version: 0.2.0
 description: |
   Record a non-obvious decision with structured context. Captures what was decided,
   why, what alternatives were considered, and what consequences follow. Builds
@@ -103,14 +103,14 @@ If a Linear ID was provided and Linear MCP is available, add a comment:
 > Tags: {tags}
 > Full record: `~/.hyve/projects/{slug}/decisions/{filename}`
 
-## AskUserQuestion Format
+## Conventions
 
-All questions to the user MUST use AskUserQuestion with lettered options:
-- Re-ground: state the decision being recorded (1 sentence)
-- Options: A), B), C) with clear one-line descriptions
-- Recommend: state which option and why
+**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
 
 ## Completion
+
+### Step 1: Report summary
 
 ```
 DECISION RECORDED
@@ -120,9 +120,13 @@ DECISION RECORDED
   Linear comment: posted / skipped
 ```
 
-## What's Next
+### Step 2: Confirm the record with the user
 
-After recording the decision, recommend via AskUserQuestion:
+Read back the decision summary: what was decided, the key alternative that was
+rejected, and the primary consequence. This is a quick sanity check — not a
+deep walkthrough. Ask if anything needs correction before offering next steps.
+
+### Step 3: Offer next steps
 
 > "Decision recorded. {total} decisions in shared state for this project. What's next?"
 > A) Continue implementing — back to work
