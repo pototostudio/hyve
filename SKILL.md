@@ -92,22 +92,39 @@ The prior version is auto-marked as `superseded` in its frontmatter.
 
 Each file has YAML frontmatter with `status: active | superseded | archived`.
 
-## Sync
+## Team Sync
 
-Shared state can be synced across team members via git:
+Shared state syncs across team members via git. Default is local-only — sync is opt-in.
+
+### Setup (once per project, per team member)
 
 ```bash
-# Initialize sync for a project
-hyve-sync --init <slug> <remote-url>
+# First person: initialize the shared repo
+hyve-sync --init myproject git@github.com:yourteam/hyve-state-myproject.git
 
-# Sync (pull + push)
+# Everyone else: join by running the same command (clones existing state)
+hyve-sync --init myproject git@github.com:yourteam/hyve-state-myproject.git
+
+# Enable auto-sync (pull on session start, push after skill writes)
+hyve-config set sync_mode git
+```
+
+### How auto-sync works
+
+Once `sync_mode` is set to `git`:
+- **Session start:** auto-pulls latest shared state from remote (non-blocking)
+- **After skill writes:** auto-commits and pushes new artifacts (non-blocking)
+- Files are write-once, so git conflicts are nearly impossible
+
+### Manual sync
+
+```bash
+# Pull + push manually
 hyve-sync [slug]
 
 # Check sync status
 hyve-sync --status [slug]
 ```
-
-Default is local-only. Sync is opt-in.
 
 ## Configuration
 

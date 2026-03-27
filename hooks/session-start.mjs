@@ -76,6 +76,34 @@ function saveLastSeen(user, data) {
   } catch { /* ignore */ }
 }
 
+function trySync(projectDir, direction) {
+  // Auto-sync: pull on session start (non-blocking, silent on failure)
+  try {
+    if (!existsSync(join(projectDir, ".git"))) return null;
+    // Check if remote is configured
+    execFileSync("git", ["remote", "get-url", "origin"], {
+      cwd: projectDir,
+      encoding: "utf-8",
+      stdio: ["pipe", "pipe", "pipe"],
+    });
+    if (direction === "pull") {
+      const branch = execFileSync("git", ["branch", "--show-current"], {
+        cwd: projectDir, encoding: "utf-8", stdio: ["pipe", "pipe", "pipe"],
+      }).trim() || "main";
+      execFileSync("git", ["pull", "--rebase", "origin", branch], {
+        cwd: projectDir,
+        encoding: "utf-8",
+        stdio: ["pipe", "pipe", "pipe"],
+        timeout: 5000,
+      });
+      return "synced";
+    }
+  } catch {
+    return "failed";
+  }
+  return null;
+}
+
 // Main
 const quiet = getConfig("quiet");
 if (quiet === "true") {
@@ -90,6 +118,13 @@ const slug = getSlug();
 const role = getConfig("role") || "dev";
 const projectDir = join(STATE_DIR, "projects", slug);
 const user = process.env.USER || "unknown";
+
+// Auto-pull shared state on session start
+const syncMode = getConfig("sync_mode") || "local";
+let syncStatus = null;
+if (syncMode !== "local") {
+  syncStatus = trySync(projectDir, "pull");
+}
 
 const specs = countFiles(join(projectDir, "specs"));
 const plans = countFiles(join(projectDir, "plans"));
@@ -126,13 +161,16 @@ saveLastSeen(user, { timestamp: now });
 // Build briefing
 const lines = [`[hyve] Project: ${slug} | Role: ${role}`];
 
+if (syncStatus === "synced") lines.push("Synced shared state from remote.");
+if (syncStatus === "failed") lines.push("Sync failed — working with local state only.");
+
 if (diffSummary) lines.push(diffSummary);
 
 if (specs + plans + reviews + decisions > 0) {
   lines.push(`Shared state: ${specs} specs, ${plans} plans, ${reviews} reviews, ${decisions} decisions.`);
 }
 
-lines.push("Skills: /hyve:review, /hyve:spec, /hyve:pickup, /hyve:decision, /hyve:search, /hyve:status, /hyve:handoff");
+lines.push("Skills: /hyve:review, /hyve:spec, /hyve:pickup, /hyve:decision, /hyve:search, /hyve:status, /hyve:handoff, /hyve:upgrade");
 
 console.log(JSON.stringify({
   result: "additionalContext",

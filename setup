@@ -23,6 +23,7 @@ chmod +x "$SCRIPT_DIR/bin/hyve-config"
 chmod +x "$SCRIPT_DIR/bin/hyve-sync"
 chmod +x "$SCRIPT_DIR/bin/hyve-slug"
 chmod +x "$SCRIPT_DIR/bin/hyve-update-check"
+chmod +x "$SCRIPT_DIR/bin/hyve-push"
 
 # 2. Create state directory
 mkdir -p "$STATE_DIR/projects"

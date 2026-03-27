@@ -179,3 +179,56 @@ existing code, patterns, and utilities that should be reused:
 ```
 
 This prevents unnecessary duplication and guides devs toward established patterns.
+
+## Auto-Sync After Writes
+
+After writing any artifact to shared state (specs, plans, reviews, decisions,
+handoffs, status), skills MUST run the push script:
+
+```bash
+"$HYVE_DIR/bin/hyve-push" "$SLUG" 2>/dev/null &
+```
+
+This commits and pushes the new artifact to the team's shared repo. It's
+non-blocking and silent on failure (no-op if sync_mode is `local`).
+
+## Context Discovery
+
+When a skill starts work on a ticket, it MUST check shared state for related
+artifacts before proceeding. This ensures the team's institutional memory is
+used, not ignored.
+
+### On skill start (after preamble):
+
+1. **Search shared state** for the Linear ID, branch name, or ticket keywords:
+   ```bash
+   grep -ril "$LINEAR_ID" "$PROJECT_DIR"/ 2>/dev/null | head -20
+   ```
+
+2. **If related docs found:** surface them to the user conversationally:
+   > "Found existing context for this ticket:"
+   > - Spec by {author} ({date}) — `specs/VER-123-spec-20260320.md`
+   > - Decision: chose JWT over opaque tokens — `decisions/20260315-jwt.md`
+   > - Prior review with 2 open action items — `reviews/VER-123-review-20260318.md`
+   >
+   > "Want me to load any of these before we start?"
+
+3. **If no related docs found:** tell the user and offer to create:
+   > "No existing hyve docs for {ticket}. This is the first time someone's
+   > working on it."
+
+   Then use AskUserQuestion with question "Want to create context for this ticket?"
+   and these options:
+   1. Yes — run /hyve:spec to decompose it first
+   2. Yes — run /hyve:pickup to create a plan
+   3. No — just proceed, I'll document later
+   4. Type something.
+   5. Chat about this
+
+### Linking to Linear
+
+When a skill creates a new artifact (spec, plan, review, decision), it should
+check if a Linear issue ID is associated. If yes:
+- Post a comment on the Linear issue linking to the artifact
+- Include the artifact type, one-line summary, and local path
+- This creates a trail from Linear → hyve shared state

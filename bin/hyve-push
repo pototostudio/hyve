@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# hyve-push — commit and push shared state after a skill writes an artifact
+#
+# Usage: hyve-push [slug]
+#
+# Non-blocking, silent on failure. Designed to be called after skills write
+# to shared state. Only pushes if sync is enabled (sync_mode != local).
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
+
+SYNC_MODE=$("$SCRIPT_DIR/hyve-config" get sync_mode 2>/dev/null || echo "local")
+if [ "$SYNC_MODE" = "local" ]; then
+  exit 0
+fi
+
+SLUG="${1:-}"
+if [ -z "$SLUG" ]; then
+  eval "$("$SCRIPT_DIR/hyve-slug" 2>/dev/null)" || SLUG="unknown"
+fi
+
+PROJECT_DIR="$STATE_DIR/projects/$SLUG"
+
+if [ ! -d "$PROJECT_DIR/.git" ]; then
+  exit 0
+fi
+
+cd "$PROJECT_DIR"
+
+# Check if remote is configured
+if ! git remote get-url origin &>/dev/null; then
+  exit 0
+fi
+
+# Commit any new/changed files
+if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+  USER=$(whoami)
+  git add -A 2>/dev/null
+  git commit -m "hyve: auto-sync by $USER at $(date -u +%Y-%m-%dT%H:%M:%SZ)" --quiet 2>/dev/null || true
+fi
+
+# Push (non-blocking, 5s timeout)
+BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+timeout 5 git push origin "$BRANCH" --quiet 2>/dev/null || true
