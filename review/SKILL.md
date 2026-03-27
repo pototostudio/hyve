@@ -105,9 +105,10 @@ STALE PLAN: This plan was created at commit {old}. HEAD is now {current}
 ({N} commits ahead). The plan may not reflect the current codebase.
 ```
 
-Use AskUserQuestion:
-> A) Continue anyway — the changes don't affect this plan
-> B) Re-run `/hyve:pickup` to refresh the plan first
+Use AskUserQuestion with selectable options:
+- A) Continue anyway — the changes don't affect this plan
+- B) Re-run `/hyve:pickup` to refresh the plan first
+- C) Let's discuss this first
 
 ## Review Flow
 
@@ -163,18 +164,14 @@ on a plan that will change.
 - Explain why each matters
 - Summarize what's NOT in scope and confirm the user agrees
 
-Then use AskUserQuestion:
-> **Re-ground:** PM review complete for {ticket} on `{branch}`. Found {N} gaps, {N} scope concerns.
->
-> **Simplify:** {plain English summary of the key finding}
->
-> **Recommend:** {A or B} — {why}
->
-> A) Looks good — continue to Engineering review
-> B) I disagree with a finding — let me clarify
-> C) This changes things — need to revise the plan before continuing
+Then use AskUserQuestion with the re-ground/simplify/recommend as question text
+and these selectable options:
+- A) Looks good — continue to Engineering review
+- B) I disagree with a finding — let me clarify
+- C) This changes things — need to revise the plan before continuing
+- D) Let's discuss this first
 
-If the user picks B, discuss their concern. Adjust findings if warranted.
+If the user picks B or D, discuss their concern. Adjust findings if warranted.
 If the user picks C, stop the review and recommend `/hyve:pickup` to revise.
 
 ---
@@ -233,16 +230,12 @@ Output as:
 - Call out the "What Already Exists" items — make sure the dev knows what to reuse
 - Explain why each concern matters and the risk if unaddressed
 
-Then use AskUserQuestion:
-> **Re-ground:** Engineering review complete for {ticket}. Found {N} concerns, {N} test gaps.
->
-> **Simplify:** {plain English summary of the key finding}
->
-> **Recommend:** {A or B} — {why}
->
-> A) Looks good — continue to Coordination review
-> B) I disagree with a finding — let me explain
-> C) These concerns are serious — need to revise the plan
+Then use AskUserQuestion with the re-ground/simplify/recommend as question text
+and these selectable options:
+- A) Looks good — continue to Coordination review
+- B) I disagree with a finding — let me explain
+- C) These concerns are serious — need to revise the plan
+- D) Let's discuss this first
 
 ---
 
@@ -292,16 +285,12 @@ Output as:
 - If dependencies found, explain the blocking chain
 - If clean, say so briefly
 
-Then use AskUserQuestion:
-> **Re-ground:** Coordination review complete for {ticket}. {conflicts found / no conflicts}.
->
-> **Simplify:** {plain English summary}
->
-> **Recommend:** A — {why}
->
-> A) All clear — proceed to synthesis
-> B) I know about a conflict not detected — let me add context
-> C) Need to coordinate with {person} before proceeding
+Then use AskUserQuestion with the re-ground/simplify/recommend as question text
+and these selectable options:
+- A) All clear — proceed to synthesis
+- B) I know about a conflict not detected — let me add context
+- C) Need to coordinate with {person} before proceeding
+- D) Let's discuss this first
 
 ---
 
@@ -423,25 +412,26 @@ Ask if the user has questions or disagrees with any finding before offering next
 ### Step 3: Offer next steps
 
 After discussing findings, offer the next step via AskUserQuestion. Always include
-an option to do a deeper dive on a specific perspective.
+an option to do a deeper dive on a specific perspective, and a "Let's discuss"
+escape hatch as the final option.
 
-**If verdict is PASS:**
-> "Review passed. What's next?"
-> A) Start implementing — dive into the code
-> B) Deep-dive a specific perspective — re-run just the PM or Eng review in more detail
-> C) Record a decision (`/hyve:decision`) — capture any non-obvious choices from the review
-> D) Hand off to someone (`/hyve:handoff`) — pass context to another dev
+**If verdict is PASS:** use AskUserQuestion with question "Review passed. What's next?"
+- A) Start implementing — dive into the code
+- B) Deep-dive a specific perspective — re-run just the PM or Eng review in more detail
+- C) Record a decision (`/hyve:decision`) — capture any non-obvious choices from the review
+- D) Hand off to someone (`/hyve:handoff`) — pass context to another dev
+- E) Let's discuss this first
 
-**If verdict is PASS_WITH_CONCERNS:**
-> "Review passed with {N} concerns. What's next?"
-> A) Address action items, then start implementing
-> B) Deep-dive a specific perspective — I can re-run just the PM or Eng review with more scrutiny
-> C) Re-run full `/hyve:review` after addressing concerns
-> D) Record a decision (`/hyve:decision`) about how to handle the concerns
+**If verdict is PASS_WITH_CONCERNS:** use AskUserQuestion with question "Review passed with {N} concerns. What's next?"
+- A) Address action items, then start implementing
+- B) Deep-dive a specific perspective — re-run just the PM or Eng review with more scrutiny
+- C) Re-run full `/hyve:review` after addressing concerns
+- D) Record a decision (`/hyve:decision`) about how to handle the concerns
+- E) Let's discuss this first
 
-**If verdict is FAIL:**
-> "Review failed — {key reason}. What's next?"
-> A) Revise the plan and re-run `/hyve:review`
-> B) Deep-dive the failing perspective — let's dig into what specifically needs to change
-> C) Discuss with the PM — the requirement may need clarification (`/hyve:spec`)
-> D) Record why this approach was rejected (`/hyve:decision`)
+**If verdict is FAIL:** use AskUserQuestion with question "Review failed — {key reason}. What's next?"
+- A) Revise the plan and re-run `/hyve:review`
+- B) Deep-dive the failing perspective — dig into what specifically needs to change
+- C) Discuss with the PM — the requirement may need clarification (`/hyve:spec`)
+- D) Record why this approach was rejected (`/hyve:decision`)
+- E) Let's discuss this first

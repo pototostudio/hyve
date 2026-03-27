@@ -30,10 +30,20 @@ thoroughness:
 - **7** = happy path covered, known gaps documented
 - **3** = shortcut, significant gaps, tech debt
 
-### 4. Options
+### 4. Options — MUST use AskUserQuestion tool
 
-Lettered choices (A, B, C). One sentence max per option. When relevant, show
-effort estimates:
+**Every set of options MUST be presented using the `AskUserQuestion` tool**, not
+as plain text. This gives the user an interactive selection UI instead of forcing
+them to type a letter.
+
+Format the question text with the re-ground, simplify, and recommend sections,
+then provide each option as a separate selectable choice.
+
+**Every question MUST include a final option: "Let's discuss this first"** — an
+escape hatch so the user can ask questions or share context before committing to
+a choice. This is always the last option.
+
+One sentence max per option. When relevant, show effort estimates:
 - `human: 2 days / CC: 15 min` — helps users understand the cost delta
 
 ### 5. One decision per question
@@ -42,6 +52,8 @@ NEVER combine independent decisions. Ask them separately in quick succession.
 
 ### Example
 
+Use AskUserQuestion with the question text:
+
 > **Re-ground:** Reviewing the auth plan for VER-456 on branch `feat/auth-redesign`.
 > We're in the PM perspective, checking requirement coverage.
 >
@@ -49,10 +61,12 @@ NEVER combine independent decisions. Ask them separately in quick succession.
 > plan only covers password login. Google login isn't mentioned anywhere.
 >
 > **Recommend:** A — add it now. It's a core requirement and costs ~15 min with CC.
->
-> A) Add Google login to the plan (Completeness: 9/10)
-> B) Defer to a follow-up ticket (Completeness: 6/10)
-> C) Skip — PM didn't mean it literally (Completeness: 4/10)
+
+And these selectable options:
+- A) Add Google login to the plan (Completeness: 9/10)
+- B) Defer to a follow-up ticket (Completeness: 6/10)
+- C) Skip — PM didn't mean it literally (Completeness: 4/10)
+- D) Let's discuss this first
 
 ## Section-by-Section Review Flow
 
@@ -68,17 +82,19 @@ problem, there's no point running the Eng perspective on a plan that will change
 
 ### Pause format
 
-After presenting a section's findings:
+After presenting a section's findings, use AskUserQuestion with question text:
 
 > **Re-ground:** {section} review complete for {ticket}. {N} findings.
 >
 > **Key findings:**
 > - {finding 1 — why it matters}
 > - {finding 2 — why it matters}
->
-> A) Looks good — continue to {next section}
-> B) I disagree with {specific finding} — let me explain
-> C) This changes things — let's revise before continuing
+
+And these selectable options:
+- A) Looks good — continue to {next section}
+- B) I disagree with a finding — let me explain
+- C) This changes things — let's revise before continuing
+- D) Let's discuss this first
 
 ## Completion Walkthrough
 
