@@ -2,7 +2,7 @@
 name: hyve
 version: 0.2.0
 description: |
-  Hyve — shared team memory for Claude Code. PMs and devs run skills locally,
+  Hyve-mind — the collective thought for your team. PMs and devs run skills locally,
   building institutional knowledge that compounds over time. Skills produce structured
   artifacts (specs, plans, reviews, decisions) that accumulate in a shared state
   directory. Linear MCP for requirements, Slack MCP for notifications (optional).
@@ -22,10 +22,10 @@ allowed-tools:
   - AskUserQuestion
 ---
 
-# Hyve — Shared Team Memory
+# Hyve-mind — The Collective Thought
 
-Hyve creates institutional knowledge that compounds over time. Every feature cycle
-adds to the team's collective intelligence.
+Every feature cycle adds to the team's collective intelligence. Specs, plans,
+reviews, decisions — they compound over time into a shared mind.
 
 ## Preamble
 

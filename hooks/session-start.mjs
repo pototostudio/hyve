@@ -109,7 +109,7 @@ const quiet = getConfig("quiet");
 if (quiet === "true") {
   console.log(JSON.stringify({
     result: "additionalContext",
-    content: "[hyve] Quiet mode — run /hyve:review, /hyve:spec, /hyve:pickup, /hyve:decision"
+    content: "[hyve-mind] Quiet mode — run /hyve:review, /hyve:spec, /hyve:pickup, /hyve:decision"
   }));
   process.exit(0);
 }
@@ -159,7 +159,7 @@ if (lastSeen) {
 saveLastSeen(user, { timestamp: now });
 
 // Build briefing
-const lines = [`[hyve] Project: ${slug} | Role: ${role}`];
+const lines = [`[hyve-mind] Project: ${slug} | Role: ${role}`];
 
 if (syncStatus === "synced") lines.push("Synced shared state from remote.");
 if (syncStatus === "failed") lines.push("Sync failed — working with local state only.");

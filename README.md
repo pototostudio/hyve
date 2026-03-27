@@ -1,10 +1,10 @@
-# hyve
+# hyve-mind
 
-Shared team memory for [Claude Code](https://claude.com/code). PMs and devs run skills locally, building institutional knowledge that compounds over time.
+The collective thought for your team. A [Claude Code](https://claude.com/code) plugin where PMs and devs run skills locally, building institutional knowledge that compounds over time.
 
 ## What it does
 
-Every feature cycle produces artifacts — specs, plans, reviews, decisions, handoffs — that accumulate in a shared state directory. When a dev picks up a ticket, their Claude Code already knows the PM's reasoning, prior decisions, and what everyone else is working on.
+Every feature cycle produces artifacts — specs, plans, reviews, decisions, handoffs — that accumulate in a shared mind. When a dev picks up a ticket, their Claude Code already knows the PM's reasoning, prior decisions, and what everyone else is working on.
 
 ## Skills
 
@@ -39,23 +39,26 @@ Start a new Claude Code session (or type `/clear`). You should see all 7 skills 
 
 ### For your team
 
-Each team member runs the same install. To share state across the team:
+Each team member runs the same install. To share the collective thought:
 
 ```bash
 # One person initializes the shared state repo
 hyve-sync --init myapp git@github.com:your-org/hyve-state-myapp.git
 
-# Everyone else clones it
+# Everyone else joins
 hyve-sync --init myapp git@github.com:your-org/hyve-state-myapp.git
 
-# Sync anytime
-hyve-sync
+# Enable auto-sync (pulls on session start, pushes after skill writes)
+hyve-config set sync_mode git
 ```
 
 ### Update
 
+Hyve checks for updates automatically. You can also update manually:
+
 ```bash
 cd ~/.claude/skills/hyve && git pull && ./setup
+# Or run /hyve:upgrade from within Claude Code
 ```
 
 ## Requirements
@@ -142,9 +145,9 @@ At any point: `/hyve:search` to find past decisions, `/hyve:status` for a status
 Add this to your project's `CLAUDE.md` so Claude Code knows about hyve in every session:
 
 ```markdown
-## Team Collaboration (hyve)
+## Team Collaboration (hyve-mind)
 
-This project uses [hyve](https://github.com/pototostudio/hyve) for team collaboration.
+This project uses [hyve-mind](https://github.com/pototostudio/hyve) for team collaboration.
 
 ### Skills
 - `/hyve:spec` — PM: decompose requirements into codebase-aware tasks

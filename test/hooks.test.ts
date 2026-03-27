@@ -41,7 +41,7 @@ describe("session-start hook", () => {
     expect(exitCode).toBe(0);
     const parsed = JSON.parse(stdout);
     expect(parsed.result).toBe("additionalContext");
-    expect(parsed.content).toContain("[hyve]");
+    expect(parsed.content).toContain("[hyve-mind]");
     expect(parsed.content).toContain("test-project");
   });
 
