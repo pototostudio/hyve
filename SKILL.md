@@ -15,6 +15,7 @@ description: |
   - /hyve:search — Search across all shared state artifacts
   - /hyve:status — Cross-role status update (PM vs dev perspective)
   - /hyve:handoff — Structured role-to-role context handoff
+  - /hyve:upgrade — Upgrade hyve to the latest version
 allowed-tools:
   - Bash
   - Read
@@ -36,11 +37,29 @@ mkdir -p "$STATE_DIR/projects" "$STATE_DIR/.cache"
 _BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 eval "$("$HYVE_DIR/bin/hyve-slug" 2>/dev/null)" || SLUG="unknown"
 ROLE=$("$HYVE_DIR/bin/hyve-config" get role 2>/dev/null || echo "dev")
+_VERSION=$(cat "$HYVE_DIR/VERSION" 2>/dev/null | tr -d '[:space:]' || echo "unknown")
+echo "HYVE: v$_VERSION"
 echo "BRANCH: $_BRANCH"
 echo "PROJECT: $SLUG"
 echo "ROLE: $ROLE"
 echo "STATE: $STATE_DIR/projects/$SLUG"
+
+# Check for updates (non-blocking, cached)
+_UPD=$("$HYVE_DIR/bin/hyve-update-check" 2>/dev/null || true)
+[ -n "$_UPD" ] && echo "$_UPD" || true
 ```
+
+### Update Check
+
+If the preamble output contains `UPGRADE_AVAILABLE`:
+- Read `$HYVE_DIR/upgrade/SKILL.md` and follow its inline upgrade flow
+  (skip preamble — you already have the context).
+- After the upgrade prompt (or auto-upgrade), resume the original skill the user invoked.
+
+If the preamble output contains `JUST_UPGRADED`:
+- Tell the user: "Running hyve v{new} (just upgraded from {old})!"
+- Read CHANGELOG.md and show 3-5 key changes as bullets.
+- Then continue with the original skill.
 
 ## Available Skills
 
@@ -53,6 +72,7 @@ echo "STATE: $STATE_DIR/projects/$SLUG"
 | `/hyve:search` | 3 | Search all shared state by keyword, tag, or Linear ID |
 | `/hyve:status` | 3 | Role-aware status report (PM gets product view, dev gets technical) |
 | `/hyve:handoff` | 3 | Comprehensive handoff document when transferring work |
+| `/hyve:upgrade` | — | Upgrade hyve to the latest version |
 
 ## Shared State
 
@@ -97,6 +117,12 @@ hyve-config set role dev    # dev | pm | design | lead
 
 # Set default project
 hyve-config set project myapp
+
+# Auto-upgrade (apply updates automatically on next session)
+hyve-config set auto_upgrade true   # true | false
+
+# Disable update checks entirely
+hyve-config set update_check false  # true | false
 
 # View all config
 hyve-config list

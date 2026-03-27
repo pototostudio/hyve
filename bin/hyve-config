@@ -20,6 +20,8 @@ ensure_config() {
 # hyve config — edit with: hyve-config set <key> <value>
 role: dev
 sync_mode: local
+update_check: true
+auto_upgrade: false
 YAML
   fi
 }

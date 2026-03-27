@@ -14,7 +14,7 @@ STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 
 # All skill directories (direct children of root that contain SKILL.md)
-SKILLS=(review spec pickup decision search status handoff)
+SKILLS=(review spec pickup decision search status handoff upgrade)
 
 echo "Setting up hyve..."
 
@@ -22,6 +22,7 @@ echo "Setting up hyve..."
 chmod +x "$SCRIPT_DIR/bin/hyve-config"
 chmod +x "$SCRIPT_DIR/bin/hyve-sync"
 chmod +x "$SCRIPT_DIR/bin/hyve-slug"
+chmod +x "$SCRIPT_DIR/bin/hyve-update-check"
 
 # 2. Create state directory
 mkdir -p "$STATE_DIR/projects"
@@ -147,3 +148,4 @@ echo "  /hyve:decision — Record a non-obvious decision"
 echo "  /hyve:search   — Search all shared state artifacts"
 echo "  /hyve:status   — Cross-role status update"
 echo "  /hyve:handoff  — Structured role-to-role context handoff"
+echo "  /hyve:upgrade  — Upgrade hyve to the latest version"
