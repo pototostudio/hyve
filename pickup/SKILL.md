@@ -246,14 +246,19 @@ Ask if the user has questions or needs clarification before offering next steps.
 
 ### Step 3: Offer next steps
 
-**If no conflicts:**
-> "Context loaded for {LINEAR_ID}. Ready to implement. What's next?"
-> A) Start implementing — I have full context now
-> B) Run `/hyve:review` on the plan first — get PM + eng feedback before coding
-> C) Record a decision (`/hyve:decision`) — I already know which approach I'll take
+**If no conflicts:** call AskUserQuestion with question
+"Context loaded for {LINEAR_ID}. Ready to implement. What's next?" and these options:
+1. Start implementing — I have full context now
+2. Run /hyve:review on the plan first — get PM + eng feedback before coding
+3. Record a decision (/hyve:decision) — I already know which approach I'll take
+4. Type something.
+5. Chat about this
 
-**If conflicts detected:**
-> "Context loaded, but {N} conflict(s) detected with other active plans. What's next?"
-> A) Run `/hyve:review` to align with the other dev before implementing
-> B) Start implementing anyway — the conflicts are minor
-> C) Check the conflicting plan in detail — show me the overlap
+**If conflicts detected:** call AskUserQuestion with question
+"Context loaded, but {N} conflict(s) detected with other active plans. What's next?"
+and these options:
+1. Run /hyve:review to align with the other dev before implementing
+2. Start implementing anyway — the conflicts are minor
+3. Check the conflicting plan in detail — show me the overlap
+4. Type something.
+5. Chat about this

@@ -221,8 +221,11 @@ with the decomposition before offering next steps.
 
 ### Step 3: Offer next steps
 
-> "Spec decomposed into {N} tasks. What's next?"
-> A) A dev should run `/hyve:pickup` on one of the sub-tasks to start implementing
-> B) Run `/hyve:review` on the spec to get eng + coordination feedback before devs start
-> C) Record a key decision from this decomposition (`/hyve:decision`)
-> D) Done for now — devs will pick up tasks from Linear
+Call the AskUserQuestion tool with question "Spec decomposed into {N} tasks. What's next?"
+and these options:
+1. A dev should run /hyve:pickup on one of the sub-tasks to start implementing
+2. Run /hyve:review on the spec to get eng + coordination feedback before devs start
+3. Record a key decision from this decomposition (/hyve:decision)
+4. Done for now — devs will pick up tasks from Linear
+5. Type something.
+6. Chat about this

@@ -194,14 +194,18 @@ Ask if the user has context to add or corrections.
 
 ### Step 3: Offer next steps
 
-**If blockers were found:**
-> "Status shows {N} blocker(s). What's next?"
-> A) Pick up the blocked ticket to unblock it (`/hyve:pickup`)
-> B) Hand off the blocker to someone who can resolve it (`/hyve:handoff`)
-> C) Done — I'll address blockers separately
+**If blockers were found:** call AskUserQuestion with question
+"Status shows {N} blocker(s). What's next?" and these options:
+1. Pick up the blocked ticket to unblock it (/hyve:pickup)
+2. Hand off the blocker to someone who can resolve it (/hyve:handoff)
+3. Done — I'll address blockers separately
+4. Type something.
+5. Chat about this
 
-**If no blockers:**
-> "Status report complete. What's next?"
-> A) Pick up the next priority ticket (`/hyve:pickup`)
-> B) Review an active plan (`/hyve:review`)
-> C) Done for now
+**If no blockers:** call AskUserQuestion with question
+"Status report complete. What's next?" and these options:
+1. Pick up the next priority ticket (/hyve:pickup)
+2. Review an active plan (/hyve:review)
+3. Done for now
+4. Type something.
+5. Chat about this

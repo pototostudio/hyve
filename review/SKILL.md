@@ -105,10 +105,11 @@ STALE PLAN: This plan was created at commit {old}. HEAD is now {current}
 ({N} commits ahead). The plan may not reflect the current codebase.
 ```
 
-Use AskUserQuestion with selectable options:
-- A) Continue anyway — the changes don't affect this plan
-- B) Re-run `/hyve:pickup` to refresh the plan first
-- C) Let's discuss this first
+Call the AskUserQuestion tool with the staleness warning as the question and these options:
+1. Continue anyway — the changes don't affect this plan
+2. Re-run /hyve:pickup to refresh the plan first
+3. Type something.
+4. Chat about this
 
 ## Review Flow
 
@@ -164,15 +165,15 @@ on a plan that will change.
 - Explain why each matters
 - Summarize what's NOT in scope and confirm the user agrees
 
-Then use AskUserQuestion with the re-ground/simplify/recommend as question text
-and these selectable options:
-- A) Looks good — continue to Engineering review
-- B) I disagree with a finding — let me clarify
-- C) This changes things — need to revise the plan before continuing
-- D) Let's discuss this first
+Call the AskUserQuestion tool with the walkthrough above as the question and these options:
+1. Looks good — continue to Engineering review
+2. I disagree with a finding — let me clarify
+3. This changes things — need to revise the plan before continuing
+4. Type something.
+5. Chat about this
 
-If the user picks B or D, discuss their concern. Adjust findings if warranted.
-If the user picks C, stop the review and recommend `/hyve:pickup` to revise.
+If the user picks 2 or 5, discuss their concern. Adjust findings if warranted.
+If the user picks 3, stop the review and recommend `/hyve:pickup` to revise.
 
 ---
 
@@ -230,12 +231,12 @@ Output as:
 - Call out the "What Already Exists" items — make sure the dev knows what to reuse
 - Explain why each concern matters and the risk if unaddressed
 
-Then use AskUserQuestion with the re-ground/simplify/recommend as question text
-and these selectable options:
-- A) Looks good — continue to Coordination review
-- B) I disagree with a finding — let me explain
-- C) These concerns are serious — need to revise the plan
-- D) Let's discuss this first
+Call the AskUserQuestion tool with the walkthrough above as the question and these options:
+1. Looks good — continue to Coordination review
+2. I disagree with a finding — let me explain
+3. These concerns are serious — need to revise the plan
+4. Type something.
+5. Chat about this
 
 ---
 
@@ -285,12 +286,12 @@ Output as:
 - If dependencies found, explain the blocking chain
 - If clean, say so briefly
 
-Then use AskUserQuestion with the re-ground/simplify/recommend as question text
-and these selectable options:
-- A) All clear — proceed to synthesis
-- B) I know about a conflict not detected — let me add context
-- C) Need to coordinate with {person} before proceeding
-- D) Let's discuss this first
+Call the AskUserQuestion tool with the walkthrough above as the question and these options:
+1. All clear — proceed to synthesis
+2. I know about a conflict not detected — let me add context
+3. Need to coordinate with {person} before proceeding
+4. Type something.
+5. Chat about this
 
 ---
 
@@ -411,27 +412,31 @@ Ask if the user has questions or disagrees with any finding before offering next
 
 ### Step 3: Offer next steps
 
-After discussing findings, offer the next step via AskUserQuestion. Always include
-an option to do a deeper dive on a specific perspective, and a "Let's discuss"
-escape hatch as the final option.
+After discussing findings, call the AskUserQuestion tool for next steps.
 
-**If verdict is PASS:** use AskUserQuestion with question "Review passed. What's next?"
-- A) Start implementing — dive into the code
-- B) Deep-dive a specific perspective — re-run just the PM or Eng review in more detail
-- C) Record a decision (`/hyve:decision`) — capture any non-obvious choices from the review
-- D) Hand off to someone (`/hyve:handoff`) — pass context to another dev
-- E) Let's discuss this first
+**If verdict is PASS:** call AskUserQuestion with question "Review passed. What's next?"
+and these options:
+1. Start implementing — dive into the code
+2. Deep-dive a specific perspective — re-run just the PM or Eng review in more detail
+3. Record a decision (/hyve:decision) — capture any non-obvious choices
+4. Hand off to someone (/hyve:handoff) — pass context to another dev
+5. Type something.
+6. Chat about this
 
-**If verdict is PASS_WITH_CONCERNS:** use AskUserQuestion with question "Review passed with {N} concerns. What's next?"
-- A) Address action items, then start implementing
-- B) Deep-dive a specific perspective — re-run just the PM or Eng review with more scrutiny
-- C) Re-run full `/hyve:review` after addressing concerns
-- D) Record a decision (`/hyve:decision`) about how to handle the concerns
-- E) Let's discuss this first
+**If verdict is PASS_WITH_CONCERNS:** call AskUserQuestion with question
+"Review passed with {N} concerns. What's next?" and these options:
+1. Address action items, then start implementing
+2. Deep-dive a specific perspective — re-run PM or Eng review with more scrutiny
+3. Re-run full /hyve:review after addressing concerns
+4. Record a decision (/hyve:decision) about how to handle the concerns
+5. Type something.
+6. Chat about this
 
-**If verdict is FAIL:** use AskUserQuestion with question "Review failed — {key reason}. What's next?"
-- A) Revise the plan and re-run `/hyve:review`
-- B) Deep-dive the failing perspective — dig into what specifically needs to change
-- C) Discuss with the PM — the requirement may need clarification (`/hyve:spec`)
-- D) Record why this approach was rejected (`/hyve:decision`)
-- E) Let's discuss this first
+**If verdict is FAIL:** call AskUserQuestion with question
+"Review failed — {key reason}. What's next?" and these options:
+1. Revise the plan and re-run /hyve:review
+2. Deep-dive the failing perspective — dig into what needs to change
+3. Discuss with the PM — the requirement may need clarification (/hyve:spec)
+4. Record why this approach was rejected (/hyve:decision)
+5. Type something.
+6. Chat about this

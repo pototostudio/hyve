@@ -211,9 +211,12 @@ Ask if the user wants to add anything before finalizing.
 
 ### Step 3: Offer next steps
 
-> "Handoff complete. {recipient} has been notified. What's next?"
-> A) Pick up another ticket (`/hyve:pickup`)
-> B) Check team status (`/hyve:status`)
-> C) Done for now
+Call the AskUserQuestion tool with question
+"Handoff complete. {recipient} has been notified. What's next?" and these options:
+1. Pick up another ticket (/hyve:pickup)
+2. Check team status (/hyve:status)
+3. Done for now
+4. Type something.
+5. Chat about this
 
 **Remind the recipient:** "When {recipient} starts, they should run `/hyve:pickup {LINEAR_ID}` to load the full context including this handoff."

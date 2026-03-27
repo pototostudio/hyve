@@ -144,13 +144,12 @@ SEARCH COMPLETE
   Filtered: active only (pass --all for all)
 ```
 
-After showing results, offer to read any in full:
-> "Want to read any of these in full? Enter a number (e.g., '1') or 'done' to finish."
-
-### What's Next
-
-> "Search complete. What's next?"
-> A) Search again with different keywords (`/hyve:search`)
-> B) Record a new decision (`/hyve:decision`) — capture something not yet documented
-> C) Pick up a ticket related to these results (`/hyve:pickup`)
-> D) Done — I found what I needed
+After showing results, call AskUserQuestion with question
+"Found {N} results. What would you like to do?" and these options:
+1. Read result #{1} in full (repeat for top results)
+2. Search again with different keywords (/hyve:search)
+3. Record a new decision (/hyve:decision) — capture something not yet documented
+4. Pick up a ticket related to these results (/hyve:pickup)
+5. Done — I found what I needed
+6. Type something.
+7. Chat about this

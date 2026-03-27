@@ -30,18 +30,30 @@ thoroughness:
 - **7** = happy path covered, known gaps documented
 - **3** = shortcut, significant gaps, tech debt
 
-### 4. Options — MUST use AskUserQuestion tool
+### 4. Options — MUST call the AskUserQuestion tool
 
-**Every set of options MUST be presented using the `AskUserQuestion` tool**, not
-as plain text. This gives the user an interactive selection UI instead of forcing
-them to type a letter.
+**CRITICAL: You MUST call the `AskUserQuestion` tool to present options.**
+NEVER write options as plain text, blockquotes, or lettered lists in your response.
+The user must see the interactive selection UI (arrow keys, Enter to select),
+not a text list they have to type a response to.
 
-Format the question text with the re-ground, simplify, and recommend sections,
-then provide each option as a separate selectable choice.
+**WRONG — options printed as text (user has to type):**
+```
+Review passed with 3 minor concerns. What's next?
+A) Start implementing — dive into the code
+B) Deep-dive a specific perspective
+C) Re-run /hyve:review after addressing concerns
+```
 
-**Every question MUST include a final option: "Let's discuss this first"** — an
-escape hatch so the user can ask questions or share context before committing to
-a choice. This is always the last option.
+**RIGHT — options passed to AskUserQuestion tool (user gets selection UI):**
+Call the AskUserQuestion tool with:
+- `question`: the re-ground + simplify + recommend text
+- `options`: each choice as a separate selectable item
+
+**Every question MUST include these special options at the end:**
+1. **"Type something."** — a freeform input option so the user can write anything
+2. **"Chat about this"** — separated by a blank line from the main options,
+   this is the escape hatch for discussing before deciding
 
 One sentence max per option. When relevant, show effort estimates:
 - `human: 2 days / CC: 15 min` — helps users understand the cost delta
@@ -52,21 +64,25 @@ NEVER combine independent decisions. Ask them separately in quick succession.
 
 ### Example
 
-Use AskUserQuestion with the question text:
+Call the AskUserQuestion tool with:
 
-> **Re-ground:** Reviewing the auth plan for VER-456 on branch `feat/auth-redesign`.
-> We're in the PM perspective, checking requirement coverage.
->
-> **Simplify:** The ticket asks for both password login and Google login, but the
-> plan only covers password login. Google login isn't mentioned anywhere.
->
-> **Recommend:** A — add it now. It's a core requirement and costs ~15 min with CC.
+**question:**
+```
+Reviewing the auth plan for VER-456 on branch feat/auth-redesign.
+We're in the PM perspective, checking requirement coverage.
 
-And these selectable options:
-- A) Add Google login to the plan (Completeness: 9/10)
-- B) Defer to a follow-up ticket (Completeness: 6/10)
-- C) Skip — PM didn't mean it literally (Completeness: 4/10)
-- D) Let's discuss this first
+The ticket asks for both password login and Google login, but the plan
+only covers password login. Google login isn't mentioned anywhere.
+
+Recommend: A — add it now. It's a core requirement and costs ~15 min with CC.
+```
+
+**options (each is a selectable item in the UI):**
+1. Add Google login to the plan (Completeness: 9/10)
+2. Defer to a follow-up ticket (Completeness: 6/10)
+3. Skip — PM didn't mean it literally (Completeness: 4/10)
+4. Type something.
+5. Chat about this
 
 ## Section-by-Section Review Flow
 
@@ -82,19 +98,23 @@ problem, there's no point running the Eng perspective on a plan that will change
 
 ### Pause format
 
-After presenting a section's findings, use AskUserQuestion with question text:
+After presenting a section's findings, call the AskUserQuestion tool:
 
-> **Re-ground:** {section} review complete for {ticket}. {N} findings.
->
-> **Key findings:**
-> - {finding 1 — why it matters}
-> - {finding 2 — why it matters}
+**question:**
+```
+{section} review complete for {ticket}. {N} findings.
 
-And these selectable options:
-- A) Looks good — continue to {next section}
-- B) I disagree with a finding — let me explain
-- C) This changes things — let's revise before continuing
-- D) Let's discuss this first
+Key findings:
+- {finding 1 — why it matters}
+- {finding 2 — why it matters}
+```
+
+**options:**
+1. Looks good — continue to {next section}
+2. I disagree with a finding — let me explain
+3. This changes things — let's revise before continuing
+4. Type something.
+5. Chat about this
 
 ## Completion Walkthrough
 

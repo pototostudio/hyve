@@ -128,8 +128,12 @@ deep walkthrough. Ask if anything needs correction before offering next steps.
 
 ### Step 3: Offer next steps
 
-> "Decision recorded. {total} decisions in shared state for this project. What's next?"
-> A) Continue implementing — back to work
-> B) Record another decision (`/hyve:decision`) — I have more to capture
-> C) Search past decisions (`/hyve:search`) — see what the team has decided before
-> D) Done for now
+Call the AskUserQuestion tool with question
+"Decision recorded. {total} decisions in shared state for this project. What's next?"
+and these options:
+1. Continue implementing — back to work
+2. Record another decision (/hyve:decision) — I have more to capture
+3. Search past decisions (/hyve:search) — see what the team has decided before
+4. Done for now
+5. Type something.
+6. Chat about this
