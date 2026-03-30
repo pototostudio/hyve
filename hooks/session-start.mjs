@@ -170,7 +170,28 @@ if (specs + plans + reviews + decisions > 0) {
   lines.push(`Shared state: ${specs} specs, ${plans} plans, ${reviews} reviews, ${decisions} decisions.`);
 }
 
-lines.push("Skills: /hyve:review, /hyve:spec, /hyve:pickup, /hyve:decision, /hyve:search, /hyve:status, /hyve:handoff, /hyve:upgrade");
+lines.push("Skills: /hyve:review, /hyve:spec, /hyve:pickup, /hyve:decision, /hyve:search, /hyve:status, /hyve:handoff, /hyve:update, /hyve:incident, /hyve:upgrade");
+
+// Feedback prompt — every 10 skill uses, nudge the user
+const FEEDBACK_INTERVAL = 10;
+const FEEDBACK_URL = "https://github.com/pototostudio/hyve/issues/new?template=feedback.md&title=Feedback:+";
+try {
+  const usagePath = join(STATE_DIR, "usage.json");
+  let usage = { sessions: 0, lastFeedbackAt: 0 };
+  if (existsSync(usagePath)) {
+    usage = JSON.parse(readFileSync(usagePath, "utf-8"));
+  }
+  usage.sessions = (usage.sessions || 0) + 1;
+
+  const sinceLastFeedback = usage.sessions - (usage.lastFeedbackAt || 0);
+  if (sinceLastFeedback >= FEEDBACK_INTERVAL) {
+    lines.push("");
+    lines.push(`You've used hyve-mind for ${usage.sessions} sessions! Got feedback? Open an issue: ${FEEDBACK_URL}`);
+    lines.push("What worked well? What could be better? Even a one-liner helps.");
+  }
+
+  writeFileSync(usagePath, JSON.stringify(usage));
+} catch { /* ignore */ }
 
 console.log(JSON.stringify({
   result: "additionalContext",

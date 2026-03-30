@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# hyve-feedback — manage feedback prompts
+#
+# Usage:
+#   hyve-feedback dismiss  — stop asking until the next interval
+#   hyve-feedback open     — open the feedback issue URL
+#   hyve-feedback status   — show usage count and next prompt
+set -uo pipefail
+
+STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
+USAGE_FILE="$STATE_DIR/usage.json"
+FEEDBACK_URL="https://github.com/pototostudio/hyve/issues/new?template=feedback.md&title=Feedback:+"
+INTERVAL=10
+
+ensure_usage() {
+  if [ ! -f "$USAGE_FILE" ]; then
+    echo '{"sessions":0,"lastFeedbackAt":0}' > "$USAGE_FILE"
+  fi
+}
+
+get_sessions() {
+  ensure_usage
+  grep -o '"sessions":[0-9]*' "$USAGE_FILE" 2>/dev/null | grep -o '[0-9]*' || echo "0"
+}
+
+case "${1:-status}" in
+  dismiss)
+    ensure_usage
+    SESSIONS=$(get_sessions)
+    # Update lastFeedbackAt to current session count
+    if command -v python3 >/dev/null 2>&1; then
+      python3 -c "
+import json
+with open('$USAGE_FILE') as f: d = json.load(f)
+d['lastFeedbackAt'] = $SESSIONS
+with open('$USAGE_FILE', 'w') as f: json.dump(d, f)
+"
+    else
+      # Fallback: just rewrite
+      echo "{\"sessions\":$SESSIONS,\"lastFeedbackAt\":$SESSIONS}" > "$USAGE_FILE"
+    fi
+    echo "Feedback prompt dismissed. Next prompt in $INTERVAL sessions."
+    ;;
+  open)
+    echo "Opening feedback form..."
+    if command -v open >/dev/null 2>&1; then
+      open "$FEEDBACK_URL"
+    elif command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "$FEEDBACK_URL"
+    else
+      echo "Open this URL in your browser:"
+      echo "$FEEDBACK_URL"
+    fi
+    # Also dismiss after opening
+    "$0" dismiss
+    ;;
+  status)
+    ensure_usage
+    SESSIONS=$(get_sessions)
+    LAST=$(grep -o '"lastFeedbackAt":[0-9]*' "$USAGE_FILE" 2>/dev/null | grep -o '[0-9]*' || echo "0")
+    SINCE=$((SESSIONS - LAST))
+    NEXT=$((INTERVAL - SINCE))
+    [ "$NEXT" -lt 0 ] && NEXT=0
+    echo "Sessions: $SESSIONS"
+    echo "Since last feedback: $SINCE"
+    echo "Next prompt in: $NEXT sessions"
+    ;;
+  *)
+    echo "Usage: hyve-feedback {dismiss|open|status}" >&2
+    exit 1
+    ;;
+esac

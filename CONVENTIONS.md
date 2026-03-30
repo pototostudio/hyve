@@ -274,6 +274,22 @@ it should check if a Linear issue ID is associated. If yes:
 - Include the artifact type, one-line summary, and local path
 - This creates a trail from Linear → hyve shared state
 
+## Feedback Collection
+
+Every 10 sessions, the session-start hook nudges the user to share feedback
+via a GitHub issue. When a skill reaches its "What's next?" step after a
+significant session, it MAY include an additional option:
+
+> "Share feedback on this experience (opens GitHub issue)"
+
+The feedback URL is pre-filled:
+`https://github.com/pototostudio/hyve/issues/new?template=feedback.md&title=Feedback:+`
+
+After the user gives feedback (or dismisses the prompt), reset the counter:
+```bash
+"$HYVE_DIR/bin/hyve-config" set last_feedback_session "$(cat ~/.hyve/usage.json 2>/dev/null | grep -o '"sessions":[0-9]*' | grep -o '[0-9]*')"
+```
+
 ## Proactive Documentation Prompts
 
 At the end of significant work sessions, skills SHOULD suggest documentation
