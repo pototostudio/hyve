@@ -1,6 +1,6 @@
 ---
 name: hyve:decision
-version: 0.2.0
+version: 0.3.0
 description: |
   Record a non-obvious decision with structured context. Captures what was decided,
   why, what alternatives were considered, and what consequences follow. Builds
@@ -8,7 +8,7 @@ description: |
 
   Use when: you made a non-obvious choice (library, pattern, architecture, trade-off)
   that future team members should understand.
-  Trigger: /hyve:decision [description]
+  Trigger: /hyve:decision [description] [--project <slug>]
 allowed-tools:
   - Bash
   - Read
@@ -16,6 +16,7 @@ allowed-tools:
   - AskUserQuestion
   - mcp__claude_ai_Linear__get_issue
   - mcp__claude_ai_Linear__save_comment
+  - mcp__claude_ai_Linear__list_comments
 ---
 
 # /hyve:decision — Record a Decision
@@ -23,6 +24,8 @@ allowed-tools:
 Capture a non-obvious decision as a structured record in shared state.
 Over time, these records build institutional memory — answering "why did we
 do it this way?" for anyone who asks later.
+
+**Read and follow `$HYVE_DIR/CONVENTIONS.md` for all user interactions.**
 
 ## Preamble
 
@@ -33,10 +36,36 @@ STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
 eval "$("$HYVE_DIR/bin/hyve-slug" 2>/dev/null)" || SLUG="unknown"
 PROJECT_DIR="$STATE_DIR/projects/$SLUG"
 mkdir -p "$PROJECT_DIR"/decisions
-_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+_BRANCH=$(git rev-parse --is-inside-work-tree 2>/dev/null && git branch --show-current 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
 echo "PROJECT: $SLUG"
 ```
+
+## Choose Gathering Mode
+
+Before gathering details, assess whether the conversation already has rich context
+(e.g., the user just finished a long investigation or implementation session).
+
+**Conversation-draft mode triggers:**
+- The conversation has 10+ messages before this skill was invoked
+- The user already described the decision, alternatives, or reasoning earlier
+- The user says something like "record what we just decided" or "capture this"
+
+If conversation-draft mode applies, call AskUserQuestion with question
+"I have context from our conversation. How should I capture this?" and options:
+1. Draft from conversation — I'll write it, you review
+2. Interview me — ask the questions one by one
+3. Type something.
+4. Chat about this
+
+**If "Draft from conversation":** synthesize the decision from the conversation
+context. Extract the decision, context, alternatives, and consequences from what
+was discussed. Present the draft to the user for review before saving.
+
+**If "Interview me":** proceed to the standard Gather flow below.
+
+**If no rich context** (short conversation, skill invoked directly): go straight
+to the Gather flow.
 
 ## Gather Decision Details
 
@@ -96,17 +125,29 @@ branch: {current branch}
 {what this enables or constrains going forward}
 ```
 
+## Auto-sync
+
+After saving, push to shared state:
+```bash
+"$HYVE_DIR/bin/hyve-push" "$SLUG" 2>/dev/null &
+```
+
 ## Post to Linear (optional)
 
-If a Linear ID was provided and Linear MCP is available, add a comment:
-> **Decision recorded:** {title}
-> Tags: {tags}
-> Full record: `~/.hyve/projects/{slug}/decisions/{filename}`
+If a Linear ID was provided and Linear MCP is available:
 
-## Conventions
+1. **Check for existing hyve comments** on the issue:
+   - Use `mcp__claude_ai_Linear__list_comments` to fetch comments
+   - Search for comments containing "**Decision recorded:**" or "**Hyve"
+   - If a hyve comment already exists, DON'T post a duplicate
 
-**Read and follow `$HYVE_DIR/CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
-MUST use the AskUserQuestion tool (not plain text) with the 5-part format.
+2. **If no existing hyve decision comment:** post:
+   > **Decision recorded:** {title}
+   > Tags: {tags}
+   > Full record: `~/.hyve/projects/{slug}/decisions/{filename}`
+
+3. **If a hyve comment already exists:** tell the user:
+   "A hyve comment already exists on this ticket. Skipping duplicate."
 
 ## Completion
 
@@ -117,7 +158,7 @@ DECISION RECORDED
   Title: {title}
   Tags: {tags}
   Saved to: {file path}
-  Linear comment: posted / skipped
+  Linear comment: posted / skipped / duplicate
 ```
 
 ### Step 2: Confirm the record with the user

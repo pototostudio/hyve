@@ -17,6 +17,9 @@ Every feature cycle produces artifacts — specs, plans, reviews, decisions, han
 | `/hyve:search` | Search across all shared state artifacts |
 | `/hyve:status` | Cross-role status update (PM vs dev perspective) |
 | `/hyve:handoff` | Structured context handoff when transferring work |
+| `/hyve:update` | Append findings to an existing plan/brief |
+| `/hyve:incident` | Record a production incident or postmortem |
+| `/hyve:upgrade` | Upgrade hyve to the latest version |
 
 ## Install
 

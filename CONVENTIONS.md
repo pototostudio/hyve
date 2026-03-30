@@ -2,6 +2,22 @@
 
 Shared standards for all hyve skills. Every SKILL.md MUST follow these conventions.
 
+## Project Override
+
+All skills MUST support `--project <slug>` to override the auto-detected project.
+This is critical for cross-repo work (e.g., a decision that spans 3 repos).
+
+Before running the preamble bash block, check if the user's arguments contain
+`--project <slug>`. If found, set `HYVE_PROJECT` env var before running preamble:
+
+```bash
+export HYVE_PROJECT="<slug>"
+```
+
+The `hyve-slug` script already respects `HYVE_PROJECT` as its highest-priority
+resolution. This means the preamble and all subsequent commands will use the
+overridden project.
+
 ## Linear Issue References
 
 When displaying a Linear issue ID (e.g., VER-123), ALWAYS render it as a
@@ -251,8 +267,24 @@ used, not ignored.
 
 ### Linking to Linear
 
-When a skill creates a new artifact (spec, plan, review, decision), it should
-check if a Linear issue ID is associated. If yes:
+When a skill creates a new artifact (spec, plan, review, decision, incident),
+it should check if a Linear issue ID is associated. If yes:
+- Check for existing hyve comments first (avoid duplicates)
 - Post a comment on the Linear issue linking to the artifact
 - Include the artifact type, one-line summary, and local path
 - This creates a trail from Linear → hyve shared state
+
+## Proactive Documentation Prompts
+
+At the end of significant work sessions, skills SHOULD suggest documentation
+if none has been created. A session is "significant" if it involved:
+- Investigating and fixing a production bug → suggest `/hyve:incident`
+- Making a non-obvious architectural choice → suggest `/hyve:decision`
+- Finishing implementation of a ticket → suggest `/hyve:handoff` or `/hyve:review`
+- Changing plans mid-work → suggest `/hyve:update`
+
+Include this as the LAST option in any "What's next?" question:
+- "Record what happened this session" — with the appropriate skill suggestion
+
+The session-start hook also checks for recent unrecorded work and surfaces it
+in the briefing.
