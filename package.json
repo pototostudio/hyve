@@ -1,6 +1,6 @@
 {
   "name": "hyve",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Hyve-mind — the collective thought for your team. PMs and devs run skills locally, building institutional knowledge that compounds over time.",
   "license": "MIT",
   "type": "module",
