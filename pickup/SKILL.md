@@ -1,10 +1,13 @@
 ---
 name: hyve:pickup
-version: 0.2.0
+version: 0.3.0
 description: |
   Dev: load full context for a Linear ticket before starting implementation.
   Reads the PM's spec, prior decisions, related reviews, and analyzes the codebase
   to produce a comprehensive pickup brief. Detects conflicts with other active work.
+
+  Adapts to ticket type: feature tickets get the full PM Intent template,
+  bug/incident tickets get a lighter Symptom → Timeline → Trace template.
 
   Use when: a dev is starting work on a ticket and wants full context.
   Trigger: /hyve:pickup [linear-id]
@@ -25,8 +28,10 @@ allowed-tools:
 
 # /hyve:pickup — Load Full Context for a Ticket
 
-A dev runs this skill to get complete context before starting implementation.
+A dev runs this skill to get complete context before starting work.
 Produces a "pickup brief" that makes asking the PM unnecessary.
+
+**Follow `CONVENTIONS.md` (in the hyve root directory) for all user interactions.**
 
 ## Preamble
 
@@ -37,8 +42,10 @@ STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
 eval "$("$HYVE_DIR/bin/hyve-slug" 2>/dev/null)" || SLUG="unknown"
 PROJECT_DIR="$STATE_DIR/projects/$SLUG"
 mkdir -p "$PROJECT_DIR"/{specs,plans,reviews,decisions,handoffs,status}
-_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
+_BRANCH=$(git rev-parse --is-inside-work-tree 2>/dev/null && git branch --show-current 2>/dev/null || echo "unknown")
+_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 echo "BRANCH: $_BRANCH"
+echo "COMMIT: $_COMMIT"
 echo "PROJECT: $SLUG"
 echo "STATE: $PROJECT_DIR"
 ```
@@ -51,10 +58,34 @@ echo "STATE: $PROJECT_DIR"
    - Check Linear for issues assigned to the current user that are "In Progress"
    - Fall back: AskUserQuestion listing available tickets
 
+## Ticket Type Detection
+
+After fetching the Linear issue, classify it as **feature** or **bug/incident**.
+
+**Bug indicators** (any match → bug template):
+- Linear labels contain "bug", "incident", "hotfix", "regression", "support"
+- Title contains "fix", "broken", "error", "timeout", "crash", "failing", "500", "404"
+- Issue was filed by a non-dev (support, customer, PM reporting a user complaint)
+- Priority is Urgent or Critical
+- Description mentions symptoms, reproduction steps, or user reports
+
+**Feature indicators** (default):
+- Linear labels contain "feature", "enhancement", "story"
+- Has acceptance criteria or spec references
+- Filed by PM or product
+
+If unclear, ask:
+
+Call AskUserQuestion with question "Is this a feature or a bug/incident?" and options:
+1. Feature — building something new
+2. Bug/incident — fixing something broken
+3. Type something.
+4. Chat about this
+
 ## Context Gathering
 
 Gather context from ALL available sources. The goal is to produce a brief so
-complete that the dev never needs to ask the PM a clarifying question.
+complete that the dev never needs to ask clarifying questions.
 
 ### 1. Linear Context (via MCP)
 
@@ -87,16 +118,11 @@ echo "=== Handoffs ==="
 grep -rl "$LINEAR_ID" "$PROJECT_DIR/handoffs/" 2>/dev/null || echo "none"
 ```
 
-Read each found artifact. Extract:
-- PM's original spec and intent (from specs/)
-- Prior implementation plans (from plans/)
-- Design decisions related to this feature (from decisions/)
-- Review feedback (from reviews/)
-- Handoff notes (from handoffs/)
+Read each found artifact.
 
 ### 3. Codebase Analysis
 
-Analyze the local codebase for the files and patterns relevant to this task:
+#### For FEATURE tickets:
 
 1. **Affected files:** If the spec has an "Affected Files" section, start there.
    Otherwise, use Grep/Glob to find files related to the ticket's keywords.
@@ -108,7 +134,70 @@ Analyze the local codebase for the files and patterns relevant to this task:
 
 3. **Dependencies:** What other modules/services does this code depend on?
 
-### 4. Conflict Detection
+#### For BUG tickets — Trace the Request Path:
+
+Keyword search alone is often useless for bugs ("login" and "timeout" don't map
+to files). Instead, trace the execution path:
+
+1. **Identify the entry point:** What endpoint/page/action triggers the bug?
+   Use Grep to find the route handler, API endpoint, or event handler.
+
+2. **Trace downstream:** From the entry point, follow the call chain:
+   - What functions does it call?
+   - What external services does it hit (databases, APIs, queues)?
+   - What middleware/interceptors run in the path?
+
+3. **Check infrastructure touchpoints:** For timeout/performance bugs:
+   - Load balancer config (nginx, cloud LB timeout settings)
+   - Database connection pool config
+   - External API timeout settings
+   - Queue/worker configurations
+
+4. **Recent changes in the path:** For each file in the traced path:
+   ```bash
+   git log --oneline --since="30 days ago" -- <file>
+   ```
+
+5. **Related error handling:** Find catch blocks, error handlers, and retry logic
+   in the traced path — these are often where bugs hide.
+
+### 4. Incident Timeline (BUG tickets only)
+
+**This section is CRITICAL for bug tickets. Do not skip it.**
+
+Ask the user (via AskUserQuestion): "When did this start happening?" with options:
+1. After a specific deploy — I know which one
+2. Gradually — it's been getting worse
+3. Suddenly — worked fine then broke
+4. Unknown — I need to investigate
+5. Type something.
+6. Chat about this
+
+Then cross-reference with:
+
+```bash
+# Recent deployments (last 14 days)
+git log --oneline --since="14 days ago" --merges 2>/dev/null | head -10
+# Recent tags
+git tag --sort=-creatordate 2>/dev/null | head -5
+```
+
+If Linear MCP is available:
+- Check for other in-progress issues that might be related
+- Check for recently resolved issues that could have caused a regression
+- Look for linked issues or mentions of the same symptom
+
+Build a timeline:
+```
+## Incident Timeline
+- {date}: Last known good state
+- {date}: Deploy {hash} merged ({PR title})
+- {date}: First user report (from Linear comments/Slack)
+- {date}: This ticket filed
+- Now: Investigating
+```
+
+### 5. Conflict Detection
 
 Check for conflicts with other active work:
 
@@ -119,35 +208,25 @@ Check for conflicts with other active work:
 
 2. For each active plan, extract the "Affected Files" section.
 
-3. Compare against this ticket's affected files. If overlap exists:
-   ```
-   CONFLICT DETECTED
-     File: src/auth/session.ts
-     Your ticket: {this LINEAR_ID}
-     Other ticket: {other LINEAR_ID} by {author}
-     Other plan summary: {one-line}
-     Recommendation: Run /hyve:review to align before implementing.
-   ```
+3. Compare against this ticket's affected files. If overlap exists, flag it.
 
 4. If no conflicts: `No conflicts with active plans.`
 
 ## Produce Pickup Brief
 
-Synthesize all gathered context into a structured brief:
+### FEATURE template:
 
 ```markdown
 # Pickup Brief: {ticket title}
 
-**Linear:** {issue ID} | **Priority:** {P1/..} | **Branch:** {current or suggested}
-**Prepared:** {datetime} | **Author:** {user}
+**Linear:** {issue ID} | **Priority:** {P1/..} | **Type:** Feature
+**Branch:** {current or suggested} | **Prepared:** {datetime}
 
 ## PM Intent
-{What the PM wants and WHY. Quoted from spec/ticket where possible.
-This is the most important section — it's the "why" behind the "what."}
+{What the PM wants and WHY. Quoted from spec/ticket where possible.}
 
-## Constraints (from PM)
-{What must NOT change. Performance limits. Compatibility requirements.
-Quoted from spec/ticket. If none stated, say "No explicit constraints."}
+## Constraints
+{What must NOT change. Performance limits. Compatibility requirements.}
 
 ## Acceptance Criteria
 - [ ] {From spec or ticket}
@@ -161,19 +240,70 @@ Quoted from spec/ticket. If none stated, say "No explicit constraints."}
 - {Pattern name}: see `src/example/file.ts` for reference
 
 ### Recent Activity
-- {file}: {N} commits in last 30 days, last by {author} on {date}
+- {file}: {N} commits in last 30 days
 
 ## Related Context
-- **Decisions:** {summary of relevant decisions from decisions/}
-- **Prior reviews:** {summary of relevant review feedback}
-- **Adjacent work:** {other tickets touching nearby code}
+- **Decisions:** {from shared state}
+- **Prior reviews:** {from shared state}
+- **Adjacent work:** {other active tickets}
 
 ## Conflicts
-{conflict detection results — or "No conflicts with active plans."}
+{conflict detection results}
 
 ## Suggested Approach
-{Based on all gathered context, suggest an implementation approach.
-Reference specific files, patterns, and existing code to reuse.}
+{implementation approach referencing specific files and patterns}
+```
+
+### BUG template:
+
+```markdown
+# Bug Brief: {ticket title}
+
+**Linear:** {issue ID} | **Priority:** {P1/..} | **Type:** Bug
+**Branch:** {current or suggested} | **Prepared:** {datetime}
+
+## Symptom
+{What's broken, in the user's words. Quote from ticket/support.}
+
+## Affected Users
+{Who reported this? How many users? Is it blocking?}
+
+## Reproduction
+{Steps to reproduce, if known. If not known, say so.}
+
+## Incident Timeline
+- {date}: Last known good state
+- {date}: Relevant deploy or change
+- {date}: First report
+- {date}: This ticket filed
+
+## Request Path Trace
+{Entry point} → {handler} → {downstream calls} → {external services}
+- Entry: `POST /api/auth/login` → `src/app/api/auth/login/route.ts`
+- Calls: `authService.login()` → `src/lib/auth.ts:45`
+- External: GCP Identity Platform (30s timeout on LB)
+- DB: Postgres via Prisma → `src/lib/db.ts`
+
+## Infrastructure Touchpoints
+- Load balancer: {timeout config, if relevant}
+- Database: {connection pool, query performance}
+- External APIs: {timeout settings, retry policies}
+
+## Related Context
+- **Decisions:** {from shared state}
+- **Adjacent work:** {other active tickets — could be related?}
+- **Recent deploys:** {deploys in the incident window}
+
+## Conflicts
+{conflict detection results}
+
+## First Hypothesis
+{Based on the trace and timeline, what's the most likely cause?}
+
+## Investigation Plan
+1. {First thing to check}
+2. {Second thing to check}
+3. {Fallback if first two don't pan out}
 ```
 
 ## Save Plan
@@ -190,6 +320,7 @@ Write to `$PROJECT_DIR/plans/${LINEAR_ID}-${_BRANCH}-plan-${DATETIME}.md`:
 ```yaml
 ---
 status: active
+type: {feature | bug}
 author: {user}
 date: {ISO date}
 linear_id: {issue ID}
@@ -197,26 +328,33 @@ branch: {git branch}
 commit: {git rev-parse --short HEAD}
 affected_files:
   - src/path/file.ts
-  - src/path/other.ts
 ---
 ```
 
 **Version check:** Mark any prior plan for this Linear ID as `superseded`.
+
+## Auto-sync
+
+After saving, push to shared state:
+```bash
+"$HYVE_DIR/bin/hyve-push" "$SLUG" 2>/dev/null &
+```
 
 ## Update Linear
 
 If Linear MCP is available:
 - Update issue status to "In Progress" via `mcp__claude_ai_Linear__save_issue`
 - Add a comment with the plan summary:
-  > **Hyve Pickup** — Plan created
+  > **Hyve Pickup** — {type} brief created
   > Affected files: {list}
-  > Suggested approach: {one-line}
+  > {For features: Suggested approach: {one-line}}
+  > {For bugs: First hypothesis: {one-line}}
   > Conflicts: {none | list}
 
 ## Conventions
 
-**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
-MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
+**Read and follow `$HYVE_DIR/CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the AskUserQuestion tool (not plain text) with the 5-part format.
 
 ## Completion
 
@@ -225,6 +363,7 @@ MUST use the 5-part format (re-ground, simplify, recommend, options, one-decisio
 ```
 PICKUP COMPLETE
   Ticket: {LINEAR_ID} — {title}
+  Type: {feature | bug}
   Brief saved: {plan file path}
   Affected files: {N}
   Conflicts: {N found | none}
@@ -235,18 +374,25 @@ PICKUP COMPLETE
 
 **This step is MANDATORY. Do not skip it.**
 
-Walk through the pickup brief conversationally:
-- **PM Intent:** Summarize what the PM wants and why (the most important part)
+**For FEATURE tickets:**
+- **PM Intent:** Summarize what the PM wants and why
 - **Constraints:** Anything the dev must NOT do
-- **Suggested Approach:** Walk through the approach and why you recommend it
-- **Conflicts:** If any, explain specifically which files overlap and with whom
-- **Key Decisions:** Reference any prior decisions from shared state that affect this work
+- **Suggested Approach:** Walk through the approach and why
+- **Conflicts:** If any, explain overlaps
+- **Key Decisions:** Reference prior decisions from shared state
+
+**For BUG tickets:**
+- **Symptom:** What's broken, who's affected
+- **Timeline:** When it started, what changed
+- **Request path:** Walk through the traced execution path
+- **First hypothesis:** What you think is most likely and why
+- **Investigation plan:** What to check first, second, third
 
 Ask if the user has questions or needs clarification before offering next steps.
 
 ### Step 3: Offer next steps
 
-**If no conflicts:** call AskUserQuestion with question
+**If no conflicts (feature):** call AskUserQuestion with question
 "Context loaded for {LINEAR_ID}. Ready to implement. What's next?" and these options:
 1. Start implementing — I have full context now
 2. Run /hyve:review on the plan first — get PM + eng feedback before coding
@@ -254,11 +400,20 @@ Ask if the user has questions or needs clarification before offering next steps.
 4. Type something.
 5. Chat about this
 
+**If no conflicts (bug):** call AskUserQuestion with question
+"Bug brief ready for {LINEAR_ID}. Ready to investigate. What's next?" and these options:
+1. Start investigating — follow the investigation plan
+2. Check the request path first — trace the execution
+3. Check recent deploys — look for the regression
+4. Run /hyve:review on the plan first — get eng feedback
+5. Type something.
+6. Chat about this
+
 **If conflicts detected:** call AskUserQuestion with question
 "Context loaded, but {N} conflict(s) detected with other active plans. What's next?"
 and these options:
-1. Run /hyve:review to align with the other dev before implementing
-2. Start implementing anyway — the conflicts are minor
+1. Run /hyve:review to align with the other dev before starting
+2. Start anyway — the conflicts are minor
 3. Check the conflicting plan in detail — show me the overlap
 4. Type something.
 5. Chat about this

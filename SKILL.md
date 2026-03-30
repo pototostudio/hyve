@@ -15,6 +15,7 @@ description: |
   - /hyve:search — Search across all shared state artifacts
   - /hyve:status — Cross-role status update (PM vs dev perspective)
   - /hyve:handoff — Structured role-to-role context handoff
+  - /hyve:update — Append findings to an existing plan/brief
   - /hyve:upgrade — Upgrade hyve to the latest version
 allowed-tools:
   - Bash
@@ -72,6 +73,7 @@ If the preamble output contains `JUST_UPGRADED`:
 | `/hyve:search` | 3 | Search all shared state by keyword, tag, or Linear ID |
 | `/hyve:status` | 3 | Role-aware status report (PM gets product view, dev gets technical) |
 | `/hyve:handoff` | 3 | Comprehensive handoff document when transferring work |
+| `/hyve:update` | 2 | Append findings to an existing plan/brief (living documents) |
 | `/hyve:upgrade` | — | Upgrade hyve to the latest version |
 
 ## Shared State

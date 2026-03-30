@@ -32,9 +32,9 @@ allowed-tools:
 Review an implementation plan from three perspectives: PM, Engineering, and Coordination.
 Runs **one perspective at a time**, pausing for user feedback between each.
 
-**Follow the conventions in `CONVENTIONS.md` for all user interactions.**
-All AskUserQuestion calls MUST use the 5-part format (re-ground, simplify, recommend,
-options, one-decision-per-question). Read `CONVENTIONS.md` in the hyve root if unsure.
+**Read and follow `$HYVE_DIR/CONVENTIONS.md` for all user interactions.**
+All AskUserQuestion calls MUST use the AskUserQuestion tool (not plain text)
+with the 5-part format.
 
 ## Preamble
 

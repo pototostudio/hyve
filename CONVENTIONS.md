@@ -2,7 +2,31 @@
 
 Shared standards for all hyve skills. Every SKILL.md MUST follow these conventions.
 
+## Linear Issue References
+
+When displaying a Linear issue ID (e.g., VER-123), ALWAYS render it as a
+clickable markdown link so the user can open it in their browser:
+
+```
+[VER-123](https://linear.app/issue/VER-123)
+```
+
+NEVER output a bare issue ID like `VER-123` without the link. This applies to:
+- Completion summaries
+- Brief headers
+- Linear comments
+- Anywhere an issue ID appears in output
+
 ## AskUserQuestion Format
+
+**HARD RULE: Every question with options MUST use the AskUserQuestion tool.**
+If you write options as text (A/B/C, numbered lists, or blockquotes) instead
+of calling the tool, you are BREAKING the UX. The user must see the interactive
+selection UI (arrow keys, Enter to select), not text they have to type a response to.
+
+**Before presenting options, always ask yourself: "Am I calling the AskUserQuestion
+tool, or am I about to write options as plain text?" If the latter, STOP and use
+the tool instead.**
 
 Every question to the user MUST use AskUserQuestion with this 5-part structure.
 NEVER batch multiple independent decisions into one question. Rapid succession

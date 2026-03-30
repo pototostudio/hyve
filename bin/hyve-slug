@@ -11,9 +11,13 @@
 #   3. Git remote origin (owner/repo → repo)
 #   4. Git toplevel directory name
 #   5. Current directory name
-set -euo pipefail
+set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+# Check if we're in a git repo at all (avoids noisy failures)
+IN_GIT_REPO=false
+git rev-parse --is-inside-work-tree >/dev/null 2>&1 && IN_GIT_REPO=true
 
 # 1. Env var override
 if [ -n "${HYVE_PROJECT:-}" ]; then
@@ -22,11 +26,11 @@ if [ -n "${HYVE_PROJECT:-}" ]; then
 elif CONFIGURED=$("$SCRIPT_DIR/hyve-config" get project 2>/dev/null) && [ -n "$CONFIGURED" ]; then
   SLUG="$CONFIGURED"
 # 3. Git remote
-elif REMOTE=$(git remote get-url origin 2>/dev/null); then
+elif [ "$IN_GIT_REPO" = true ] && REMOTE=$(git remote get-url origin 2>/dev/null); then
   # Extract repo name from SSH or HTTPS URL
   SLUG=$(echo "$REMOTE" | sed 's|.*/||' | sed 's|\.git$||')
 # 4. Git toplevel
-elif TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null); then
+elif [ "$IN_GIT_REPO" = true ] && TOPLEVEL=$(git rev-parse --show-toplevel 2>/dev/null); then
   SLUG=$(basename "$TOPLEVEL")
 # 5. Current directory
 else

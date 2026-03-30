@@ -105,8 +105,8 @@ If a Linear ID was provided and Linear MCP is available, add a comment:
 
 ## Conventions
 
-**Follow `CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
-MUST use the 5-part format (re-ground, simplify, recommend, options, one-decision-per-question).
+**Read and follow `$HYVE_DIR/CONVENTIONS.md` for all user interactions.** All AskUserQuestion calls
+MUST use the AskUserQuestion tool (not plain text) with the 5-part format.
 
 ## Completion
 
