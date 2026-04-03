@@ -232,6 +232,44 @@ handoffs, status), skills MUST run the push script:
 This commits and pushes the new artifact to the team's shared repo. It's
 non-blocking and silent on failure (no-op if sync_mode is `local`).
 
+## Project Timeline
+
+Skills MUST append key events to `$PROJECT_DIR/timeline.md` after completing
+their work. This creates a chronological narrative that `/hyve:status` and
+`/hyve:retro` use to communicate what's happening.
+
+### Format
+
+Each event is a single line appended to the file:
+
+```
+| {ISO datetime} | {user} | {event type} | {Linear ID or —} | {one-line summary} |
+```
+
+Event types: `spec`, `pickup`, `review`, `decision`, `update`, `incident`,
+`handoff`, `status`, `retro`, `deploy`, `milestone`.
+
+### How to append
+
+After saving an artifact, append to the timeline:
+```bash
+echo "| $(date -u +%Y-%m-%dT%H:%M:%SZ) | $(whoami) | {type} | {LINEAR_ID:-—} | {summary} |" >> "$PROJECT_DIR/timeline.md"
+```
+
+If `timeline.md` doesn't exist, create it with a header first:
+```bash
+if [ ! -f "$PROJECT_DIR/timeline.md" ]; then
+  echo "| Time | Who | Event | Ticket | Summary |" > "$PROJECT_DIR/timeline.md"
+  echo "|------|-----|-------|--------|---------|" >> "$PROJECT_DIR/timeline.md"
+fi
+```
+
+### Reading the timeline
+
+`/hyve:status` renders the last 20 events. `/hyve:retro` reads the full
+timeline for the retro period. This gives the team a shared view of what
+happened and when.
+
 ## Context Discovery
 
 When a skill starts work on a ticket, it MUST check shared state for related

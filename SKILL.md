@@ -17,6 +17,7 @@ description: |
   - /hyve:handoff — Structured role-to-role context handoff
   - /hyve:update — Append findings to an existing plan/brief
   - /hyve:incident — Record a production incident or postmortem
+  - /hyve:retro — Project or sprint retrospective
   - /hyve:upgrade — Upgrade hyve to the latest version
 allowed-tools:
   - Bash
@@ -76,6 +77,7 @@ If the preamble output contains `JUST_UPGRADED`:
 | `/hyve:handoff` | 3 | Comprehensive handoff document when transferring work |
 | `/hyve:update` | 2 | Append findings to an existing plan/brief (living documents) |
 | `/hyve:incident` | 3 | Record a production incident or postmortem |
+| `/hyve:retro` | 4 | Project or sprint retrospective |
 | `/hyve:upgrade` | — | Upgrade hyve to the latest version |
 
 ## Shared State
