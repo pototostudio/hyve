@@ -14,7 +14,7 @@ STATE_DIR="${HYVE_STATE_DIR:-$HOME/.hyve}"
 CLAUDE_SKILLS_DIR="$HOME/.claude/skills"
 
 # All skill directories (direct children of root that contain SKILL.md)
-SKILLS=(review spec pickup decision search status handoff update incident retro upgrade)
+SKILLS=(review spec pickup decision search status handoff update incident retro feedback upgrade)
 
 echo "Setting up hyve..."
 
@@ -153,4 +153,5 @@ echo "  /hyve:handoff  — Structured role-to-role context handoff"
 echo "  /hyve:update   — Append findings to an existing brief"
 echo "  /hyve:incident — Record a production incident or postmortem"
 echo "  /hyve:retro    — Project or sprint retrospective"
+echo "  /hyve:feedback — Share feedback via GitHub issue"
 echo "  /hyve:upgrade  — Upgrade hyve to the latest version"
