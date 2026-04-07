@@ -1,6 +1,6 @@
 ---
 name: hyve
-version: 0.3.1
+version: 0.4.0
 description: |
   Hyve-mind — the collective thought for your team. PMs and devs run skills locally,
   building institutional knowledge that compounds over time. Skills produce structured
