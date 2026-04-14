@@ -18,6 +18,7 @@ description: |
   - /hyve:update — Append findings to an existing plan/brief
   - /hyve:incident — Record a production incident or postmortem
   - /hyve:retro — Project or sprint retrospective
+  - /hyve:design — Live design session capture
   - /hyve:feedback — Share feedback via GitHub issue
   - /hyve:upgrade — Upgrade hyve to the latest version
 allowed-tools:
@@ -78,6 +79,7 @@ If the preamble output contains `JUST_UPGRADED`:
 | `/hyve:handoff` | 3 | Comprehensive handoff document when transferring work |
 | `/hyve:update` | 2 | Append findings to an existing plan/brief (living documents) |
 | `/hyve:incident` | 3 | Record a production incident or postmortem |
+| `/hyve:design` | 1 | Live design session capture |
 | `/hyve:retro` | 4 | Project or sprint retrospective |
 | `/hyve:feedback` | — | Share feedback via GitHub issue |
 | `/hyve:upgrade` | — | Upgrade hyve to the latest version |

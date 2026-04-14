@@ -6,7 +6,7 @@ import { existsSync } from "node:fs";
 const ROOT_DIR = join(import.meta.dir, "..");
 
 // Skill directories are direct children of the root (not under skills/)
-const SKILL_DIRS = ["review", "spec", "pickup", "decision", "search", "status", "handoff", "update", "incident", "retro", "feedback", "upgrade"];
+const SKILL_DIRS = ["review", "spec", "pickup", "decision", "search", "status", "handoff", "update", "incident", "retro", "design", "feedback", "upgrade"];
 
 async function findSkillFiles(): Promise<string[]> {
   const skills: string[] = [];
@@ -49,7 +49,7 @@ function parseFrontmatter(content: string): Record<string, unknown> | null {
 describe("skill validation", () => {
   test("all skills have valid YAML frontmatter", async () => {
     const skills = await findSkillFiles();
-    expect(skills.length).toBe(13); // root + 12 skills
+    expect(skills.length).toBe(14); // root + 13 skills
 
     for (const skillPath of skills) {
       const content = await readFile(skillPath, "utf-8");

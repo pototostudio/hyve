@@ -134,6 +134,22 @@ Read each found artifact.
 
 3. **Dependencies:** What other modules/services does this code depend on?
 
+4. **Infrastructure touchpoints** (for observability/metrics/infra tickets):
+
+   If the ticket involves metrics, monitoring, logging, or infrastructure:
+   - Check for **ServiceMonitor** / scrape config in k8s manifests:
+     ```bash
+     find . -name "*.yaml" -o -name "*.yml" | xargs grep -l "ServiceMonitor\|scrapeConfig\|prometheus" 2>/dev/null | head -10
+     ```
+   - Check for **label conflicts**: Prometheus renames app-level labels that collide
+     with ServiceMonitor-injected labels (e.g., `endpoint` → `exported_endpoint`).
+     Flag this if the ticket involves custom metrics.
+   - Check for **Grafana dashboards** or alert rules that reference these metrics
+   - Check for **deploy manifests** (Helm, kustomize, ArgoCD) that configure the
+     service's observability stack
+
+   Include findings in an "Infrastructure Touchpoints" section of the brief.
+
 #### For BUG tickets — Trace the Request Path:
 
 Keyword search alone is often useless for bugs ("login" and "timeout" don't map

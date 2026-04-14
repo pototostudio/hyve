@@ -67,10 +67,11 @@ Otherwise, call AskUserQuestion with question
 "What kind of update?" and these options:
 1. Investigation finding — I discovered something about the root cause
 2. Status change — updating where things stand
-3. Hypothesis update — my theory changed based on new evidence
-4. Scope change — the work is bigger/smaller than expected
-5. Decision made — I chose an approach (also records via /hyve:decision)
-6. Type something.
+3. Just deployed — update status, Linear, and timeline after a deploy
+4. Hypothesis update — my theory changed based on new evidence
+5. Scope change — the work is bigger/smaller than expected
+6. Decision made — I chose an approach (also records via /hyve:decision)
+7. Type something.
 7. Chat about this
 
 ## Gather the Update
@@ -85,6 +86,14 @@ Based on the update type, ask focused follow-up questions ONE AT A TIME:
 **Status change:**
 - "What's the current status?" (investigating / found root cause / fixing / testing / blocked)
 - "What's blocking?" (if blocked)
+
+**Just deployed:**
+- "Which repo/service was deployed?" (auto-detect from git if possible)
+- "What was deployed?" (PR number, commit, or description)
+- "Deploy successful?" (yes / partial / failed)
+- Auto-gather: latest git tag, recent merge commits
+- Updates the plan status, appends to timeline, posts to Linear
+- If the plan has remaining deploy steps, show what's next
 
 **Hypothesis update:**
 - "What was the old hypothesis?"

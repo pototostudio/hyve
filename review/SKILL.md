@@ -29,8 +29,12 @@ allowed-tools:
 
 # /hyve:review — Multi-Stakeholder Plan Review
 
-Review an implementation plan from three perspectives: PM, Engineering, and Coordination.
-Runs **one perspective at a time**, pausing for user feedback between each.
+Two modes:
+- **Full review** (default): Reviews a finished plan from PM, Engineering, and
+  Coordination perspectives sequentially, pausing between each.
+- **Design review**: Lighter, interleaved review for mid-design discussions where
+  PM and eng concerns are naturally mixed. Surfaces risks and blind spots without
+  assuming a finished plan.
 
 **Read and follow `$HYVE_DIR/CONVENTIONS.md` for all user interactions.**
 All AskUserQuestion calls MUST use the AskUserQuestion tool (not plain text)
@@ -66,7 +70,59 @@ echo "GSTACK: $GSTACK_AVAILABLE"
 echo "LINEAR_MCP: available (check via tool call)"
 ```
 
-## Plan Resolution
+## Mode Selection
+
+Detect the review mode from context:
+
+- If the plan is a `design-session-*.md` file → **design review** mode
+- If the user says "design review" or "review the design" → **design review** mode
+- If the plan is still in-progress (status: active, type: design-session) → **design review**
+- Otherwise → **full review** mode (default)
+
+If unclear, call AskUserQuestion with question "What kind of review?" and options:
+1. Full review — plan is finished, review from PM + Eng + Coordination
+2. Design review — design is still in progress, surface risks and blind spots
+3. Type something.
+4. Chat about this
+
+---
+
+## Design Review Mode
+
+For mid-design discussions. Instead of separate PM → Eng → Coordination passes,
+interleave all perspectives in a single conversational pass:
+
+1. **Read the design doc / plan** — understand what's being proposed
+2. **Surface issues as a combined list**, each tagged with perspective:
+   - `[PM]` Does this actually match what was requested?
+   - `[ENG]` Is this technically sound? Edge cases?
+   - `[COORD]` Does this conflict with other active work?
+   - `[DESIGN]` Are there better approaches not considered?
+
+3. **For each issue**, present it conversationally and ask:
+
+   Call AskUserQuestion with the issue as question and options:
+   1. Good catch — we should address this
+   2. Already considered — here's why we're OK with it
+   3. Not relevant to this design
+   4. Type something.
+   5. Chat about this
+
+4. **After all issues**, summarize:
+   - Decisions confirmed
+   - New concerns raised
+   - Open questions added to the design doc
+
+5. **Save** a lightweight review note (appended to the design doc, not a
+   separate review file) and offer next steps.
+
+This mode does NOT produce a full review document — it enriches the design doc.
+
+---
+
+## Full Review Mode (default)
+
+### Plan Resolution
 
 Find the plan to review. Resolution order:
 
